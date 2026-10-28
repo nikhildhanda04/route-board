@@ -1,0 +1,733 @@
+<title>School Bus Tracker — Build Plan</title>
+<style>
+  :root {
+    --paper:      #F1F2EF;
+    --panel:      #FAFBF8;
+    --ink:        #15171A;
+    --ink-soft:   #4A4F4B;
+    --mute:       #767B76;
+    --rule:       #D5D8D2;
+    --rule-soft:  #E3E5E0;
+    --amber:      #B57F00;
+    --amber-mark: #E8A700;
+    --green:      #2B6D5C;
+    --red:        #B2402A;
+    --bubble:     #DCF2D8;
+    --bubble-ink: #14301F;
+
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+    --measure: 66ch;
+    --gutter: clamp(1.25rem, 5vw, 4rem);
+    --maxw: 1100px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #121414;
+      --panel:      #1A1D1C;
+      --ink:        #ECEEEA;
+      --ink-soft:   #B6BBB5;
+      --mute:       #858A84;
+      --rule:       #2E3230;
+      --rule-soft:  #242826;
+      --amber:      #E8A700;
+      --amber-mark: #F0B82B;
+      --green:      #5FB79C;
+      --red:        #E0725A;
+      --bubble:     #1F3A2C;
+      --bubble-ink: #D7EEDF;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #121414;
+    --panel:      #1A1D1C;
+    --ink:        #ECEEEA;
+    --ink-soft:   #B6BBB5;
+    --mute:       #858A84;
+    --rule:       #2E3230;
+    --rule-soft:  #242826;
+    --amber:      #E8A700;
+    --amber-mark: #F0B82B;
+    --green:      #5FB79C;
+    --red:        #E0725A;
+    --bubble:     #1F3A2C;
+    --bubble-ink: #D7EEDF;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+  }
+
+  /* ---------- type ---------- */
+
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  h1 {
+    font-size: clamp(2.4rem, 7vw, 4.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 750;
+  }
+
+  h3 {
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+
+  p { margin: 0; max-width: var(--measure); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  .lede {
+    font-size: clamp(1.05rem, 2vw, 1.3rem);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 54ch;
+  }
+
+  .small { font-size: 0.875rem; color: var(--ink-soft); }
+  .mono  { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--rule-soft);
+    padding: 0.1em 0.35em;
+    color: var(--ink);
+  }
+
+  /* ---------- section frame ---------- */
+
+  section { padding: clamp(3rem, 7vw, 5.5rem) 0; border-top: 1px solid var(--rule); }
+  section:first-of-type { border-top: 0; }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+  }
+  .head p { color: var(--ink-soft); }
+
+  /* ---------- hero ---------- */
+
+  header {
+    padding: clamp(3.5rem, 9vw, 7rem) 0 clamp(2.5rem, 5vw, 4rem);
+  }
+  .hero-stack { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .stamp {
+    display: inline-flex;
+    gap: 0.6rem;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 0.4rem 0.7rem;
+    width: fit-content;
+  }
+  .stamp b { color: var(--ink); font-weight: 600; }
+  .dot-live {
+    width: 7px; height: 7px; background: var(--amber-mark);
+    border-radius: 50%; flex: none;
+  }
+
+  /* ---------- route line (hero graphic) ---------- */
+
+  .routeline { margin-top: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
+  .routeline-inner {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(170px, 1fr));
+    min-width: 700px;
+    position: relative;
+  }
+  .routeline-inner::before {
+    content: "";
+    position: absolute;
+    top: 11px; left: 0; right: 0;
+    height: 2px;
+    background: var(--rule);
+  }
+  .stopnode { position: relative; padding: 0 1rem 0 0; }
+  .stopnode .pip {
+    width: 24px; height: 24px;
+    border: 2px solid var(--amber-mark);
+    background: var(--paper);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    position: relative; z-index: 1;
+    font-family: var(--mono);
+    font-size: 0.65rem; font-weight: 700;
+    color: var(--amber);
+  }
+  .stopnode .when {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-top: 1rem;
+  }
+  .stopnode .what { font-weight: 650; margin-top: 0.15rem; letter-spacing: -0.01em; }
+  .stopnode .msg { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.3rem; }
+
+  /* ---------- panels & grids ---------- */
+
+  .grid { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+
+  .cell {
+    background: var(--panel);
+    padding: 1.4rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .cell .k {
+    font-family: var(--mono);
+    font-size: 0.68rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--mute);
+  }
+  .cell .v { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.015em; }
+  .cell .why { font-size: 0.875rem; color: var(--ink-soft); }
+
+  /* ---------- architecture ---------- */
+
+  .arch { overflow-x: auto; }
+  .arch-inner {
+    min-width: 640px;
+    display: grid;
+    gap: 0;
+    justify-items: center;
+  }
+  .tier {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    width: 100%;
+  }
+  .box {
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    padding: 1rem;
+    text-align: left;
+  }
+  .box.key { border-color: var(--amber-mark); border-width: 2px; }
+  .box .t {
+    font-family: var(--mono); font-size: 0.68rem;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber);
+  }
+  .box .n { font-weight: 700; margin-top: 0.3rem; letter-spacing: -0.015em; }
+  .box ul { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.83rem; color: var(--ink-soft); }
+  .box li { margin-top: 0.15rem; }
+
+  .flow {
+    height: 2.25rem; width: 100%;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    position: relative;
+  }
+  .flow i {
+    display: block;
+    border-left: 2px solid var(--rule);
+    margin: 0 auto;
+    height: 100%;
+    width: 0;
+  }
+  .flow span {
+    position: absolute; inset: auto 0 -0.1rem 0;
+    text-align: center;
+    font-family: var(--mono); font-size: 0.65rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute);
+    background: var(--paper); width: fit-content; margin: 0 auto; padding: 0 0.5rem;
+  }
+
+  /* ---------- schema ---------- */
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--rule); }
+  th, td { text-align: left; padding: 0.7rem 1rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--mute); font-weight: 600;
+    background: var(--panel); border-bottom: 1px solid var(--rule);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.name { font-family: var(--mono); font-weight: 600; white-space: nowrap; color: var(--ink); }
+  td.num  { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .notes { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.75rem; }
+  .note {
+    border-left: 2px solid var(--amber-mark);
+    padding-left: 1rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+  }
+  .note b { color: var(--ink); font-weight: 650; }
+
+  /* ---------- phases ---------- */
+
+  .phases { display: flex; flex-direction: column; border: 1px solid var(--rule); }
+  .phase {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr 9rem;
+    gap: 1.25rem;
+    padding: 1.25rem 1.4rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: start;
+  }
+  .phase:last-child { border-bottom: 0; }
+  .phase .ph {
+    font-family: var(--mono); font-size: 1.5rem; font-weight: 700;
+    color: var(--amber); letter-spacing: -0.04em; line-height: 1.1;
+  }
+  .phase .body { display: flex; flex-direction: column; gap: 0.35rem; }
+  .phase .body .t { font-weight: 700; letter-spacing: -0.015em; }
+  .phase .body .d { font-size: 0.875rem; color: var(--ink-soft); }
+  .phase .eff {
+    font-family: var(--mono); font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    color: var(--ink-soft); text-align: right;
+  }
+  @media (max-width: 640px) {
+    .phase { grid-template-columns: 3rem 1fr; }
+    .phase .eff { grid-column: 2; text-align: left; }
+  }
+
+  /* ---------- whatsapp ---------- */
+
+  .thread {
+    display: flex; flex-direction: column; gap: 0.6rem;
+    border: 1px solid var(--rule); background: var(--panel);
+    padding: 1.5rem;
+  }
+  .bub {
+    background: var(--bubble);
+    color: var(--bubble-ink);
+    padding: 0.7rem 0.9rem;
+    max-width: 30rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    border-radius: 10px 10px 10px 2px;
+  }
+  .bub .ts {
+    display: block;
+    font-family: var(--mono); font-size: 0.68rem;
+    opacity: 0.65; margin-top: 0.35rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .bub a { color: inherit; text-underline-offset: 2px; }
+  .bub.alert { background: var(--panel); border: 1px solid var(--red); color: var(--red); }
+
+  /* ---------- cost ---------- */
+
+  .ledger { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .fig { background: var(--panel); padding: 1.4rem; }
+  .fig .n {
+    font-family: var(--mono); font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .fig .l {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--mute); margin-top: 0.6rem;
+  }
+  .fig .s { font-size: 0.83rem; color: var(--ink-soft); margin-top: 0.4rem; }
+
+  .flag {
+    border: 1px solid var(--amber-mark);
+    background: var(--panel);
+    padding: 1rem 1.2rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin-top: 1.5rem;
+    max-width: var(--measure);
+  }
+  .flag b { color: var(--ink); }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 2.5rem 0 4rem;
+    color: var(--mute);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;
+  }
+
+  a:focus-visible, :focus-visible {
+    outline: 2px solid var(--amber-mark);
+    outline-offset: 2px;
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="hero-stack">
+      <div class="stamp"><span class="dot-live"></span> Build plan <b>&middot;</b> v1 pilot <b>&middot;</b> 5&ndash;6 weeks</div>
+      <h1>Who got on<br>the bus.</h1>
+      <p class="lede">A school bus system whose whole job is answering one question for a parent, four times a day, without anyone making a phone call.</p>
+
+      <div class="routeline" aria-label="The four moments a parent is notified">
+        <div class="routeline-inner">
+          <div class="stopnode">
+            <div class="pip">1</div>
+            <div class="when">07:42 &middot; At the stop</div>
+            <div class="what">Boarded</div>
+            <div class="msg">Driver taps the name. Parent knows within seconds.</div>
+          </div>
+          <div class="stopnode">
+            <div class="pip">2</div>
+            <div class="when">08:15 &middot; At school</div>
+            <div class="what">Arrived</div>
+            <div class="msg">One tap ends the trip and clears every parent on it.</div>
+          </div>
+          <div class="stopnode">
+            <div class="pip">3</div>
+            <div class="when">15:05 &middot; At school</div>
+            <div class="what">Left for home</div>
+            <div class="msg">Same roster, reversed. Live map link goes out.</div>
+          </div>
+          <div class="stopnode">
+            <div class="pip">4</div>
+            <div class="when">15:48 &middot; At the stop</div>
+            <div class="what">Dropped off</div>
+            <div class="msg">The day closes. Nothing left unaccounted for.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Four decisions that set the shape</div>
+      <h2>Locked in before any code</h2>
+      <p>Each of these is the cheap option that still works. Every one has a documented upgrade path if a school outgrows it.</p>
+    </div>
+
+    <div class="grid g2">
+      <div class="cell">
+        <div class="k">Boarding capture</div>
+        <div class="v">Driver taps names on a roster</div>
+        <div class="why">No RFID cards, no readers, no hardware to lose or replace. A pilot can start the week a school says yes. Add scanning only when a school disputes a tap or a bus passes ~40 students.</div>
+      </div>
+      <div class="cell">
+        <div class="k">Parent channel</div>
+        <div class="v">WhatsApp Business API</div>
+        <div class="why">Parents install nothing. Messages land where they already look, and arrive on phones that would never keep a school app updated.</div>
+      </div>
+      <div class="cell">
+        <div class="k">Tenancy</div>
+        <div class="v">Multi-tenant from day one</div>
+        <div class="why">A <code>school_id</code> on every row and a row-level security policy that enforces it. Adding this after the first three schools is a rewrite, not a migration.</div>
+      </div>
+      <div class="cell">
+        <div class="k">Driver surface</div>
+        <div class="v">A webapp, not a native app</div>
+        <div class="why">The driver gets a link and adds it to their home screen. No app store, no review cycle, no support call every time a driver changes phone. Taps are queued locally, so they survive dead zones either way.</div>
+      </div>
+      <div class="cell">
+        <div class="k">Stack</div>
+        <div class="v">Next.js &middot; Neon Postgres</div>
+        <div class="why">One repo, one deploy, one <code>npm run dev</code>. Drizzle for schema and migrations, Vercel for hosting and cron. Nothing to keep running at 3am.</div>
+      </div>
+      <div class="cell">
+        <div class="k">Messaging vendor</div>
+        <div class="v">Meta Cloud API, direct</div>
+        <div class="why">API access is free and you pay Meta's rate with no reseller markup. A BSP sells an inbox and a flow builder &mdash; both of which you are already building.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Architecture</div>
+      <h2>One app, three surfaces, no API server</h2>
+      <p>Everything above the database is one Next.js project on one deploy. Row-level security does authorization in the database, Realtime pushes bus positions straight to the map, and a single edge function sends messages. A Node backend in the middle would add a deploy to maintain and buy nothing.</p>
+    </div>
+
+    <div class="flag" style="margin:0 0 1.75rem"><b>Why not a native driver app.</b> Native buys exactly one thing: GPS that survives a locked screen. It costs an app-store pipeline and the permanent burden of getting drivers to install and update software. The boarding taps &mdash; the part a child's safety depends on &mdash; are queued locally and survive anything either way. Build native when a school complains that tracking drops, funded by their money.</div>
+
+    <div class="arch">
+      <div class="arch-inner">
+        <div class="tier">
+          <div class="box">
+            <div class="t">/admin &middot; desktop</div>
+            <div class="n">School desk</div>
+            <ul>
+              <li>Students &amp; CSV import</li>
+              <li>Route and stop planner</li>
+              <li>Live map, attendance, exceptions</li>
+            </ul>
+          </div>
+          <div class="box key">
+            <div class="t">/drive &middot; installable PWA</div>
+            <div class="n">Driver phone</div>
+            <ul>
+              <li>Tap-the-roster boarding</li>
+              <li>Service worker + IndexedDB queue</li>
+              <li>Geolocation held open by Wake Lock</li>
+            </ul>
+          </div>
+          <div class="box">
+            <div class="t">/t/[token] &middot; no login</div>
+            <div class="n">Parent map</div>
+            <ul>
+              <li>Opened from the WhatsApp link</li>
+              <li>Signed token, expires with the trip</li>
+              <li>Live bus marker and ETA</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="flow" aria-hidden="true"><i></i><i></i><i></i><span>One Next.js deploy &middot; Drizzle</span></div>
+
+        <div class="box key" style="width:100%">
+          <div class="t">Neon Postgres &middot; Drizzle</div>
+          <div class="n">One database, with authorization inside it</div>
+          <ul>
+            <li><b>RLS on every tenant table.</b> Queries run inside <code>forSchool(id, &hellip;)</code>, which sets <code>app.school_id</code> for that transaction. Forget to scope one and you get zero rows &mdash; never another school's</li>
+            <li><b>A restricted role</b> rather than the table owner, so <code>FORCE ROW LEVEL SECURITY</code> actually bites</li>
+            <li><b>An SSE route</b> streams <code>bus_locations</code> to the live map &mdash; no websocket server to run</li>
+            <li><b>Vercel Cron</b> drains the outbox to WhatsApp every minute, with retries</li>
+          </ul>
+        </div>
+
+        <div class="flow" aria-hidden="true"><i style="visibility:hidden"></i><i></i><i style="visibility:hidden"></i><span>Vercel Cron &rarr; route handler</span></div>
+
+        <div class="box" style="width:100%">
+          <div class="t">External</div>
+          <div class="n">WhatsApp Cloud API &mdash; five approved utility templates</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Data model</div>
+      <h2>Twelve tables, one of them load-bearing</h2>
+      <p>Everything a parent, a principal or an auditor ever asks is a query over <code>trip_events</code>. There is no separate attendance table to drift out of sync with it.</p>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Table</th><th>Holds</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">schools</td><td>The tenant. Name, timezone, WhatsApp sender identity.</td></tr>
+          <tr><td class="name">users</td><td>Staff accounts &mdash; admin, driver or attendant.</td></tr>
+          <tr><td class="name">students</td><td>Name, class, photo, active flag.</td></tr>
+          <tr><td class="name">guardians</td><td>Phone numbers to notify, with a per-guardian opt-out.</td></tr>
+          <tr><td class="name">buses</td><td>Plate and capacity.</td></tr>
+          <tr><td class="name">routes</td><td>A named pickup or drop run.</td></tr>
+          <tr><td class="name">stops</td><td>Location, sequence and scheduled time along a route.</td></tr>
+          <tr><td class="name">route_students</td><td>Which child boards at which stop on which route.</td></tr>
+          <tr><td class="name">trips</td><td>One route, bus and driver on one date. Scheduled &rarr; running &rarr; done.</td></tr>
+          <tr><td class="name">trip_events</td><td>Append-only: boarded, alighted, absent. The source of truth.</td></tr>
+          <tr><td class="name">bus_locations</td><td>GPS pings while a trip runs. Pruned after 7 days.</td></tr>
+          <tr><td class="name">outbox</td><td>Queued parent messages with status, attempts and last error.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <div class="note"><b>A client-generated ID on every tap.</b> The driver app stamps each event with a UUID before it ever reaches the network. A unique constraint on that column means replaying the offline queue can never send a parent the same message twice.</div>
+      <div class="note"><b>One security policy, written once.</b> An <code>app_school_id()</code> function in Postgres, reused verbatim across all eleven tenant tables. Every table carries its own <code>school_id</code> even where a join could reach it &mdash; one identical policy beats six different join-based ones.</div>
+      <div class="note"><b>History is append-only, and says so out loud.</b> A trigger rejects any UPDATE or DELETE on <code>trip_events</code>; corrections are recorded as new events. The first attempt used a rule that silently discarded the write and returned success &mdash; precisely the kind of thing you discover during an incident.</div>
+      <div class="note"><b>Messages go through an outbox, not a direct call.</b> The driver may be in a dead zone when the tap happens, and a direct API call has no retry. The outbox makes delivery durable &mdash; and gives you a log to point at when a parent says they never got a message.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">What a parent actually receives</div>
+      <h2>Five templates, pre-approved by Meta</h2>
+      <p>All five are utility-category templates. Approval takes days and the business verification behind it can take a week or two &mdash; <b>submit these on day one</b>, before writing a line of app code.</p>
+    </div>
+
+    <div class="thread">
+      <div class="bub">Aarav boarded bus KA-01-5521 at Jayanagar 4th Block.<br><a href="#">Track the bus &rarr;</a><span class="ts">07:42</span></div>
+      <div class="bub">Aarav reached school at 08:15.<span class="ts">08:15</span></div>
+      <div class="bub">Aarav boarded the bus home at 15:05.<br><a href="#">Track the bus &rarr;</a><span class="ts">15:05</span></div>
+      <div class="bub">Aarav got off at Jayanagar 4th Block at 15:48.<span class="ts">15:48</span></div>
+      <div class="bub alert">Aarav did not board the bus at Jayanagar 4th Block today.<span class="ts">07:50</span></div>
+    </div>
+
+    <div class="flag"><b>The last one is the one that matters.</b> Give it an SMS fallback if WhatsApp delivery fails twice. A parent can forgive a late arrival notice; they cannot forgive silence when their child wasn't on the bus.</div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Build order</div>
+      <h2>Six phases to a pilot</h2>
+      <p>Phases 1 and 2 run in parallel once the schema lands. Roughly 5&ndash;6 weeks for one developer; 3&ndash;4 for two.</p>
+    </div>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="ph">00</div>
+        <div class="body">
+          <div class="t">Schema, security, seed data &mdash; <span style="color:var(--green)">built</span></div>
+          <div class="d">Twelve tables, RLS forced on all eleven tenant tables, an append-only trigger on the event log, and two seeded schools so isolation is testable rather than assumed &mdash; with nine assertions that prove it, run as the restricted role because a superuser would pass them all for the wrong reason.</div>
+        </div>
+        <div class="eff">done</div>
+      </div>
+      <div class="phase">
+        <div class="ph">01</div>
+        <div class="body">
+          <div class="t">Admin web &mdash; auth, students, CSV import, route planner</div>
+          <div class="d">CSV import is the make-or-break onboarding feature; no school hand-types 800 students. The route planner is a map you click to drop stops, a draggable list to order them, and a picker to assign children to each.</div>
+        </div>
+        <div class="eff">1.5&ndash;2 weeks</div>
+      </div>
+      <div class="phase">
+        <div class="ph">02</div>
+        <div class="body">
+          <div class="t">Driver PWA &mdash; roster, offline queue, GPS</div>
+          <div class="d">Four screens, same codebase as the admin, served at <code>/drive</code> with its own mobile layout. A web manifest makes it installable to the home screen &mdash; no store, no review, no install support calls.</div>
+        </div>
+        <div class="eff">1 week</div>
+      </div>
+      <div class="phase">
+        <div class="ph">03</div>
+        <div class="body">
+          <div class="t">Outbox and WhatsApp delivery</div>
+          <div class="d">A database trigger queues one message per guardian; Vercel Cron drains the queue every minute, claiming rows with <code>for update skip locked</code> so overlapping runs cannot double-send. Template approval runs in the background from day one.</div>
+        </div>
+        <div class="eff">4&ndash;5 days</div>
+      </div>
+      <div class="phase">
+        <div class="ph">04</div>
+        <div class="body">
+          <div class="t">Live tracking link</div>
+          <div class="d">A signed token in the message opens a public page with a live bus marker, fed by a server-sent-events route &mdash; no parent login, no parent app, no websocket server. This is also the demo that sells the product.</div>
+        </div>
+        <div class="eff">3&ndash;4 days</div>
+      </div>
+      <div class="phase">
+        <div class="ph">05</div>
+        <div class="body">
+          <div class="t">School dashboard and exceptions</div>
+          <div class="d">All buses on one map, plus the screen a principal actually opens: who didn't board, which trips started late, which bus has been stopped too long.</div>
+        </div>
+        <div class="eff">1 week</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Unit economics &mdash; 5,000 bus students</div>
+      <h2>Messages are effectively the whole cost</h2>
+      <p>Meta charges <b>&#8377;0.1150</b> per utility message to an Indian number, <b>+18% GST = &#8377;0.1357 delivered</b>. Going direct to the Cloud API means no reseller markup. Volume discounts only begin at 25 million messages a month &mdash; roughly 57 schools this size &mdash; so assume list rate indefinitely.</p>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Notification plan</th><th>Messages / month</th><th>Cost / month</th><th>Per student</th><th>Per year</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2 a day, one guardian</td><td class="num">220,000</td><td class="num">&#8377;29,854</td><td class="num">&#8377;5.97</td><td class="num">&#8377;2.99 L</td></tr>
+          <tr style="background:var(--rule-soft)"><td><b>4 a day, one guardian</b></td><td class="num"><b>440,000</b></td><td class="num"><b>&#8377;59,708</b></td><td class="num"><b>&#8377;11.94</b></td><td class="num"><b>&#8377;5.97 L</b></td></tr>
+          <tr><td>6 a day, one guardian</td><td class="num">660,000</td><td class="num">&#8377;89,562</td><td class="num">&#8377;17.91</td><td class="num">&#8377;8.96 L</td></tr>
+          <tr><td>4 a day, <b>both parents</b></td><td class="num">880,000</td><td class="num">&#8377;1,19,416</td><td class="num">&#8377;23.88</td><td class="num">&#8377;11.94 L</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ledger" style="margin-top:1.75rem">
+      <div class="fig">
+        <div class="n">&#8377;11.94</div>
+        <div class="l">Cost per student / month</div>
+        <div class="s">Four messages a day to one guardian, 22 school days.</div>
+      </div>
+      <div class="fig">
+        <div class="n">&#8377;40&ndash;60</div>
+        <div class="l">What to charge per student</div>
+        <div class="s">70&ndash;80% gross margin, and only 2&ndash;4% of the &#8377;1,200&ndash;2,500 a school already bills parents for transport.</div>
+      </div>
+      <div class="fig">
+        <div class="n">&#8377;8k</div>
+        <div class="l">Everything else / month</div>
+        <div class="s">Neon and Vercel across ~100 buses. An order of magnitude under messaging.</div>
+      </div>
+      <div class="fig">
+        <div class="n">2&times;</div>
+        <div class="l">Cost of the second parent</div>
+        <div class="s">The largest single lever on the bill.</div>
+      </div>
+    </div>
+
+    <div class="flag"><b>Guardian count, not student count, is what blows up the bill.</b> Default every student to one primary number and sell the second parent as a paid add-on. And price per student, never flat &mdash; your cost scales with heads, so your revenue has to.</div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div class="eyebrow">Scope held back on purpose</div>
+      <h2>Not in v1 &mdash; and the signal to add it</h2>
+      <p>None of these are forgotten. Each is waiting on a specific trigger, so the decision to build it comes from a customer rather than from a quiet afternoon.</p>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Left out</th><th>Build it when</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Native driver app</td><td>Schools report the live map going stale because drivers background the tab. The boarding record is never affected, so this is a comfort complaint &mdash; wait until it is a paying one.</td></tr>
+          <tr><td class="name">Parent mobile app</td><td>Parents ask for something a WhatsApp message and a map link can't do &mdash; leave requests, two-way chat, multiple children in one view.</td></tr>
+          <tr><td class="name">RFID / NFC scanning</td><td>A school disputes a manual tap, or a bus carries more students than a driver can reliably tap through.</td></tr>
+          <tr><td class="name">Automatic route optimization</td><td>Schools complain about hand-ordering stops. Then a routing API, not a solver you wrote.</td></tr>
+          <tr><td class="name">Driver safety reporting</td><td>A school asks about speeding or harsh braking. The GPS history is already sitting there.</td></tr>
+          <tr><td class="name">In-app billing</td><td>After the third paying school. Invoice by hand until then.</td></tr>
+          <tr><td class="name">Multi-language templates</td><td>The first school whose parents don't read English signs.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>School bus tracker &middot; rev 3 &mdash; Next.js + Neon &middot; phase 0 built</span>
+    <span>Next step &rarr; Phase 01, admin</span>
+  </footer>
+
+</div>

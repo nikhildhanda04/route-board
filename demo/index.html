@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Bus Tracker — Demo</title>
+<style>
+  :root {
+    --paper:#F1F2EF; --panel:#FAFBF8; --ink:#15171A; --ink-soft:#4A4F4B;
+    --mute:#767B76; --rule:#D5D8D2; --rule-soft:#E3E5E0;
+    --amber:#B57F00; --amber-mark:#E8A700; --green:#2B6D5C; --green-bg:#E2EFE9;
+    --red:#B2402A; --red-bg:#F6E5E0; --bubble:#DCF2D8; --bubble-ink:#14301F;
+    --sans: ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono: ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --paper:#121414; --panel:#1A1D1C; --ink:#ECEEEA; --ink-soft:#B6BBB5;
+    --mute:#858A84; --rule:#2E3230; --rule-soft:#242826;
+    --amber:#E8A700; --amber-mark:#F0B82B; --green:#5FB79C; --green-bg:#1C322B;
+    --red:#E0725A; --red-bg:#331F1A; --bubble:#1F3A2C; --bubble-ink:#D7EEDF;
+  }}
+  :root[data-theme="dark"] {
+    --paper:#121414; --panel:#1A1D1C; --ink:#ECEEEA; --ink-soft:#B6BBB5;
+    --mute:#858A84; --rule:#2E3230; --rule-soft:#242826;
+    --amber:#E8A700; --amber-mark:#F0B82B; --green:#5FB79C; --green-bg:#1C322B;
+    --red:#E0725A; --red-bg:#331F1A; --bubble:#1F3A2C; --bubble-ink:#D7EEDF;
+  }
+
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body {
+    background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  :focus-visible { outline:2px solid var(--amber-mark); outline-offset:2px; }
+
+  .mono { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .lbl {
+    font-family:var(--mono); font-size:.65rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--mute); font-weight:600;
+  }
+
+  /* ---- chrome ---- */
+  .topbar {
+    position:sticky; top:0; z-index:10;
+    background:var(--paper); border-bottom:1px solid var(--rule);
+    display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+    padding:.75rem clamp(1rem,4vw,2rem);
+  }
+  .brand { font-weight:800; letter-spacing:-.02em; text-transform:uppercase; font-size:.95rem; }
+  .brand span { color:var(--amber); }
+  .tabs { display:flex; border:1px solid var(--rule); }
+  .tabs button {
+    background:var(--panel); border:0; border-right:1px solid var(--rule);
+    padding:.45rem .9rem; font-family:var(--mono); font-size:.7rem;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft);
+  }
+  .tabs button:last-child { border-right:0; }
+  .tabs button[aria-selected="true"] { background:var(--amber-mark); color:#15171A; font-weight:700; }
+  .clock {
+    margin-left:auto; display:flex; align-items:center; gap:.6rem;
+    font-family:var(--mono); font-size:.8rem; color:var(--ink-soft);
+  }
+  .pip { width:7px; height:7px; border-radius:50%; background:var(--mute); flex:none; }
+  .pip.on { background:var(--amber-mark); animation:blink 1.6s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+  @media (prefers-reduced-motion:reduce) { .pip.on { animation:none; } }
+  .ghost {
+    background:none; border:1px solid var(--rule); padding:.35rem .7rem;
+    font-family:var(--mono); font-size:.65rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+  .ghost:hover { border-color:var(--ink-soft); }
+
+  main { padding:clamp(1rem,4vw,2rem); max-width:1180px; margin:0 auto; }
+  .view[hidden] { display:none; }
+  .view { display:flex; flex-direction:column; gap:1.5rem; }
+
+  h2 { margin:0; font-size:1.3rem; letter-spacing:-.02em; }
+  .head { display:flex; flex-direction:column; gap:.3rem; }
+  .head p { margin:0; color:var(--ink-soft); font-size:.9rem; max-width:62ch; }
+
+  .cols { display:grid; gap:1.25rem; grid-template-columns:1fr; }
+  @media (min-width:900px) { .cols { grid-template-columns:1.15fr .85fr; align-items:start; } }
+  @media (min-width:900px) { .cols.drv { grid-template-columns:392px 1fr; } }
+
+  /* ---- driver phone frame ---- */
+  .phonewrap { display:flex; flex-direction:column; gap:.75rem; }
+  .phone {
+    border:1px solid var(--rule); border-radius:26px; background:var(--panel);
+    padding:7px; box-shadow:0 1px 0 var(--rule-soft);
+  }
+  .phone-screen {
+    border:1px solid var(--rule); border-radius:20px; overflow:hidden;
+    background:var(--panel); display:flex; flex-direction:column;
+    height:min(640px, 78vh);
+  }
+  .phone-bar {
+    display:flex; align-items:center; gap:.5rem; padding:.45rem .9rem .2rem;
+    font-family:var(--mono); font-size:.68rem; color:var(--mute);
+    font-variant-numeric:tabular-nums; flex:none;
+  }
+  .phone-bar .sig { margin-left:auto; letter-spacing:.1em; }
+  .phone-hdr {
+    padding:.5rem .9rem .7rem; border-bottom:1px solid var(--rule); flex:none;
+  }
+  .phone-hdr .rt { font-weight:750; letter-spacing:-.02em; font-size:1.02rem; }
+  .phone-hdr .sub { font-family:var(--mono); font-size:.68rem; color:var(--mute); margin-top:.1rem; }
+  .phone-hdr .cnt {
+    display:flex; align-items:baseline; gap:.4rem; margin-top:.55rem;
+  }
+  .phone-hdr .cnt b { font-family:var(--mono); font-size:1.35rem; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+  .phone-hdr .cnt span { font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--mute); }
+  .phone-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .phone-foot { flex:none; border-top:1px solid var(--rule); }
+  .phone-note {
+    font-family:var(--mono); font-size:.65rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--mute); text-align:center;
+  }
+
+  .panel { border:1px solid var(--rule); background:var(--panel); }
+  .panel > .ph {
+    display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+    padding:.7rem 1rem; border-bottom:1px solid var(--rule);
+  }
+  .panel > .pb { padding:1rem; }
+
+  /* ---- map ---- */
+  .map { display:block; width:100%; height:auto; background:var(--panel); }
+  .map .road { fill:none; stroke:var(--rule); stroke-width:14; stroke-linejoin:round; stroke-linecap:round; }
+  .map .lane { fill:none; stroke:var(--amber-mark); stroke-width:2.5; stroke-dasharray:7 7; stroke-linejoin:round; stroke-linecap:round; opacity:.55; }
+  .map .trail { fill:none; stroke:var(--amber-mark); stroke-width:4; stroke-linejoin:round; stroke-linecap:round; }
+  .map .stopdot { fill:var(--panel); stroke:var(--mute); stroke-width:2.5; }
+  .map .stopdot.done { fill:var(--green); stroke:var(--green); }
+  .map .stopdot.mine { stroke:var(--amber-mark); stroke-width:4; }
+  .map text { font-family:var(--mono); font-size:9px; fill:var(--mute); letter-spacing:.06em; }
+  .map text.mine { fill:var(--amber); font-weight:700; }
+  .map .school { fill:var(--ink); }
+  .bus rect { fill:var(--amber-mark); }
+  .bus circle { fill:#15171A; }
+
+  /* ---- driver ---- */
+  .stopgroup { border-bottom:1px solid var(--rule); }
+  .stopgroup:last-child { border-bottom:0; }
+  .stophdr {
+    display:flex; align-items:center; gap:.6rem;
+    padding:.6rem .9rem; background:var(--rule-soft);
+    position:sticky; top:0; z-index:1;
+  }
+  .stophdr .n {
+    font-family:var(--mono); font-size:.7rem; font-weight:700;
+    color:var(--amber); min-width:1.4rem;
+  }
+  .stophdr .s { font-weight:650; font-size:.9rem; letter-spacing:-.01em; }
+  .stophdr .t { margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--mute); }
+  .stopgroup.now .stophdr { background:var(--amber-mark); }
+  .stopgroup.now .stophdr .n, .stopgroup.now .stophdr .s, .stopgroup.now .stophdr .t { color:#15171A; }
+
+  .srow {
+    display:flex; align-items:center; gap:.75rem; min-height:58px;
+    padding:.65rem .9rem; border-top:1px solid var(--rule-soft); width:100%;
+    background:none; border-left:0; border-right:0; border-bottom:0; text-align:left;
+  }
+  .srow:disabled { cursor:default; }
+  .srow:not(:disabled):active { background:var(--rule-soft); }
+  .srow .av {
+    width:38px; height:38px; border-radius:50%; flex:none;
+    display:grid; place-items:center; font-weight:700; font-size:.78rem;
+    background:var(--rule-soft); color:var(--ink-soft);
+  }
+  .srow .nm { font-weight:600; letter-spacing:-.01em; }
+  .srow .cl { font-family:var(--mono); font-size:.7rem; color:var(--mute); }
+  .srow .tag {
+    margin-left:auto; font-family:var(--mono); font-size:.65rem;
+    letter-spacing:.1em; text-transform:uppercase; padding:.2rem .5rem;
+  }
+  .srow.boarded { background:var(--green-bg); }
+  .srow.boarded .av { background:var(--green); color:var(--panel); }
+  .srow.boarded .tag { color:var(--green); }
+  .srow.absent { opacity:.6; }
+  .srow.absent .tag { color:var(--red); }
+  .xbtn {
+    margin-left:.5rem; border:1px solid var(--rule); background:none;
+    font-family:var(--mono); font-size:.62rem; letter-spacing:.1em;
+    text-transform:uppercase; padding:.25rem .5rem; color:var(--mute);
+  }
+  .xbtn:hover { border-color:var(--red); color:var(--red); }
+
+  .bigbtn {
+    width:100%; border:0; padding:.95rem 1rem;
+    background:var(--amber-mark); color:#15171A; font-weight:750;
+    letter-spacing:.02em;
+  }
+  .bigbtn:disabled { background:var(--rule); color:var(--mute); cursor:not-allowed; }
+  .bigbtn.done { background:var(--green); color:var(--panel); }
+
+  .meter { height:4px; background:var(--rule); }
+  .meter i { display:block; height:100%; background:var(--amber-mark); transition:width .25s; }
+
+  /* ---- stats ---- */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--rule); }
+  .stat { background:var(--panel); padding:.85rem 1rem; }
+  .stat .n { font-family:var(--mono); font-size:1.5rem; font-weight:700; letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums; }
+  .stat .l { font-family:var(--mono); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--mute); margin-top:.4rem; }
+  .stat.warn .n { color:var(--red); }
+  .stat.good .n { color:var(--green); }
+
+  /* ---- parent ---- */
+  select {
+    font:inherit; background:var(--panel); color:var(--ink);
+    border:1px solid var(--rule); padding:.4rem .6rem;
+  }
+  .thread { display:flex; flex-direction:column; gap:.55rem; padding:1rem; min-height:140px; }
+  .bub {
+    background:var(--bubble); color:var(--bubble-ink);
+    padding:.65rem .85rem; max-width:27rem; font-size:.9rem; line-height:1.45;
+    border-radius:10px 10px 10px 2px; animation:pop .25s ease-out;
+  }
+  @keyframes pop { from { opacity:0; transform:translateY(5px); } }
+  @media (prefers-reduced-motion:reduce) { .bub { animation:none; } }
+  .bub .ts { display:block; font-family:var(--mono); font-size:.65rem; opacity:.6; margin-top:.3rem; }
+  .bub.alert { background:var(--red-bg); color:var(--red); border-radius:10px 10px 10px 2px; }
+  .empty { color:var(--mute); font-size:.85rem; padding:1rem; font-style:italic; }
+
+  /* ---- cost calculator ---- */
+  .ctl { display:flex; flex-direction:column; gap:1.3rem; padding:1.2rem; }
+  .ctl label { display:flex; flex-direction:column; gap:.5rem; }
+  .ctl .cap { display:flex; align-items:baseline; gap:.5rem; }
+  .ctl .cap b {
+    margin-left:auto; font-family:var(--mono); font-size:.95rem;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+  }
+  input[type=range] {
+    -webkit-appearance:none; appearance:none; width:100%; height:2px;
+    background:var(--rule); outline:none; margin:.5rem 0;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none; width:18px; height:18px;
+    background:var(--amber-mark); border:0; cursor:pointer; border-radius:50%;
+  }
+  input[type=range]::-moz-range-thumb {
+    width:18px; height:18px; background:var(--amber-mark);
+    border:0; cursor:pointer; border-radius:50%;
+  }
+  .seg { display:flex; border:1px solid var(--rule); }
+  .seg button {
+    flex:1; background:var(--panel); border:0; border-right:1px solid var(--rule);
+    padding:.5rem; font-family:var(--mono); font-size:.7rem; color:var(--ink-soft);
+  }
+  .seg button:last-child { border-right:0; }
+  .seg button[aria-pressed="true"] { background:var(--amber-mark); color:#15171A; font-weight:700; }
+
+  .out { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:1px; background:var(--rule); }
+  .out .o { background:var(--panel); padding:1.1rem; }
+  .out .o .n {
+    font-family:var(--mono); font-size:1.6rem; font-weight:700;
+    letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums;
+  }
+  .out .o .l {
+    font-family:var(--mono); font-size:.6rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); margin-top:.5rem;
+  }
+  .out .o.cost .n { color:var(--red); }
+  .out .o.rev  .n { color:var(--green); }
+  .note {
+    border-left:2px solid var(--amber-mark); padding:.2rem 0 .2rem 1rem;
+    margin:1.2rem; font-size:.85rem; color:var(--ink-soft);
+  }
+  .note b { color:var(--ink); }
+
+  .log { max-height:240px; overflow-y:auto; }
+  .logrow {
+    display:flex; gap:.75rem; padding:.45rem 1rem;
+    border-top:1px solid var(--rule-soft); font-size:.83rem; align-items:baseline;
+  }
+  .logrow:first-child { border-top:0; }
+  .logrow .tm { font-family:var(--mono); font-size:.72rem; color:var(--mute); min-width:3.3rem; }
+  .logrow .kd { font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; min-width:5.5rem; }
+  .kd.boarded { color:var(--green); }
+  .kd.absent  { color:var(--red); }
+  .kd.system  { color:var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Route<span>·</span>Board</div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-driver" aria-selected="true"  onclick="show('driver')">Driver</button>
+    <button role="tab" id="tab-parent" aria-selected="false" onclick="show('parent')">Parent</button>
+    <button role="tab" id="tab-school" aria-selected="false" onclick="show('school')">School</button>
+    <button role="tab" id="tab-costs"  aria-selected="false" onclick="show('costs')">Costs</button>
+  </div>
+  <div class="clock">
+    <span class="pip" id="pip"></span>
+    <span id="clock">07:30</span>
+    <button class="ghost" onclick="reset()">Reset</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============ DRIVER ============ -->
+  <div class="view" id="view-driver">
+    <div class="head">
+      <h2>Driver &mdash; what it looks like on the phone</h2>
+      <p>No app store. The driver opens a link once and adds it to the home screen. Tap a name as each child boards; every tap is written locally first, so dead zones change nothing.</p>
+    </div>
+
+    <div class="cols drv">
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-bar">
+              <span id="ph-clock">07:30</span>
+              <span class="sig" id="ph-net">LTE &middot; QUEUE 0</span>
+            </div>
+            <div class="phone-hdr">
+              <div class="rt">Jayanagar &mdash; AM pickup</div>
+              <div class="sub">KA-01-5521 &middot; Ramesh K.</div>
+              <div class="cnt"><b id="drv-count">0/14</b><span>boarded</span></div>
+            </div>
+            <div class="meter"><i id="drv-meter" style="width:0%"></i></div>
+            <div class="phone-scroll" id="roster"></div>
+            <div class="phone-foot">
+              <button class="bigbtn" id="drv-action" onclick="driverAction()">Start trip</button>
+            </div>
+          </div>
+        </div>
+        <div class="phone-note">Installed to home screen &middot; works offline</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <div class="panel">
+          <div class="ph"><span class="lbl">Live position</span></div>
+          <div id="map-driver"></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="lbl">Event queue</span><span class="mono" id="q-state" style="margin-left:auto;font-size:.72rem;color:var(--mute)">synced</span></div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PARENT ============ -->
+  <div class="view" id="view-parent" hidden>
+    <div class="head">
+      <h2>What the parent sees</h2>
+      <p>No app, no login. WhatsApp messages arrive as the driver taps, each carrying a link to this live map that expires when the trip ends.</p>
+    </div>
+
+    <div class="cols">
+      <div class="panel">
+        <div class="ph">
+          <span class="lbl">WhatsApp &mdash; School Transport</span>
+          <select id="kid" onchange="render()" aria-label="Choose a child" style="margin-left:auto"></select>
+        </div>
+        <div class="thread" id="thread"></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><span class="lbl">Track the bus</span><span class="mono" id="eta" style="margin-left:auto;font-size:.78rem;color:var(--amber)"></span></div>
+        <div id="map-parent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCHOOL ============ -->
+  <div class="view" id="view-school" hidden>
+    <div class="head">
+      <h2>Transport desk</h2>
+      <p>One trip running today. The numbers that matter are the ones in red &mdash; children nobody has accounted for.</p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="cols">
+      <div class="panel">
+        <div class="ph"><span class="lbl">Exceptions</span></div>
+        <div id="exceptions"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="lbl">Fleet</span><span class="mono" id="fleet-state" style="margin-left:auto;font-size:.72rem;color:var(--mute)"></span></div>
+        <div id="map-school"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ COSTS ============ -->
+  <div class="view" id="view-costs" hidden>
+    <div class="head">
+      <h2>What it costs to run</h2>
+      <p>Meta bills <span class="mono">&#8377;0.1150</span> per utility message to an Indian number, plus 18% GST &mdash; <span class="mono">&#8377;0.1357</span> delivered. Going direct to the Cloud API means no reseller markup. Volume discounts only start at 25 million messages a month, so the economics stay linear &mdash; a 300-student school earns the same margin as a 5,000-student one.</p>
+    </div>
+
+    <div class="cols">
+      <div class="panel">
+        <div class="ph"><span class="lbl">Assumptions</span></div>
+        <div class="ctl">
+          <label>
+            <span class="cap">Bus students <b id="v-stu">5,000</b></span>
+            <input type="range" id="i-stu" min="100" max="10000" step="100" value="5000" oninput="costs()">
+          </label>
+          <label>
+            <span class="cap">Charge per student / month <b id="v-prc">&#8377;50</b></span>
+            <input type="range" id="i-prc" min="0" max="120" step="5" value="50" oninput="costs()">
+          </label>
+          <div>
+            <span class="cap lbl" style="margin-bottom:.5rem;display:block">Messages per child per day</span>
+            <div class="seg" id="s-msg">
+              <button onclick="setOpt('msg',2,this)" aria-pressed="false">2 &mdash; basic</button>
+              <button onclick="setOpt('msg',4,this)" aria-pressed="true">4 &mdash; standard</button>
+              <button onclick="setOpt('msg',6,this)" aria-pressed="false">6 &mdash; with ETA</button>
+            </div>
+          </div>
+          <div>
+            <span class="cap lbl" style="margin-bottom:.5rem;display:block">Guardians notified</span>
+            <div class="seg" id="s-grd">
+              <button onclick="setOpt('grd',1,this)" aria-pressed="true">One primary</button>
+              <button onclick="setOpt('grd',2,this)" aria-pressed="false">Both parents</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <div class="panel">
+          <div class="ph"><span class="lbl">Per month</span><span class="mono" id="v-msgs" style="margin-left:auto;font-size:.75rem;color:var(--mute)"></span></div>
+          <div class="out" id="out"></div>
+          <div class="note" id="c-note"></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="lbl">Per year &mdash; 10 school months</span></div>
+          <div class="out" id="out-yr"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ---------------------------------------------------------------- demo data
+const STOPS = [
+  { name:"Jayanagar 4th Block", at:"07:42", x: 60, y:272 },
+  { name:"South End Circle",    at:"07:50", x:152, y:238 },
+  { name:"Madhavan Park",       at:"07:57", x:238, y:276 },
+  { name:"Tilak Nagar",         at:"08:03", x:332, y:212 },
+  { name:"Ragigudda",           at:"08:08", x:424, y:248 },
+  { name:"BTM Layout",          at:"08:12", x:502, y:176 },
+];
+const SCHOOL = { name:"Vidya Vihar School", x:566, y:88 };
+
+const STUDENTS = [
+  ["Aarav Menon","6B",0], ["Diya Rao","4A",0], ["Kabir Shah","7C",0],
+  ["Ishita Nair","5B",1], ["Vihaan Gupta","3A",1],
+  ["Ananya Iyer","8A",2], ["Rohan Das","6A",2], ["Meera Pillai","4C",2],
+  ["Arjun Reddy","7B",3], ["Saanvi Joshi","5A",3],
+  ["Neel Kulkarni","3B",4], ["Tara Bose","8C",4],
+  ["Advait Sharma","6C",5], ["Zoya Khan","4B",5],
+].map(([name,cls,stop],i) => ({ id:i, name, cls, stop }));
+
+const BUS = "KA-01-5521";
+const TRIP_MINUTES = 45;        // 07:30 -> 08:15
+const RUN_SECONDS  = 50;        // one simulated trip takes this long in real time
+
+// ---------------------------------------------------------------- state
+const BLANK = { phase:"idle", progress:0, status:{}, events:[] };
+let S = load();
+let timer = null;
+
+function load() {
+  try { return Object.assign({}, BLANK, JSON.parse(localStorage.getItem("rb") || "{}")); }
+  catch { return { ...BLANK }; }
+}
+function save() { try { localStorage.setItem("rb", JSON.stringify(S)); } catch {} }
+
+function reset() {
+  stopTimer();
+  S = { ...BLANK, status:{}, events:[] };
+  save(); render();
+}
+
+// ---------------------------------------------------------------- clock
+function minutes() { return 7*60 + 30 + S.progress * TRIP_MINUTES; }
+function hhmm(m) {
+  m = Math.round(m);
+  return String(Math.floor(m/60)).padStart(2,"0") + ":" + String(m%60).padStart(2,"0");
+}
+function now() { return hhmm(minutes()); }
+
+// ---------------------------------------------------------------- geometry
+// Cumulative distance along the stop polyline, so the bus can be placed by
+// fraction of the route travelled without any mapping library.
+const PTS = [...STOPS, SCHOOL];
+const SEG = PTS.slice(1).map((p,i) => Math.hypot(p.x-PTS[i].x, p.y-PTS[i].y));
+const TOTAL = SEG.reduce((a,b) => a+b, 0);
+const CUM = SEG.reduce((acc,d) => (acc.push(acc[acc.length-1]+d), acc), [0]);
+
+function pointAt(frac) {
+  const d = Math.max(0, Math.min(1, frac)) * TOTAL;
+  let i = 0;
+  while (i < SEG.length - 1 && CUM[i+1] < d) i++;
+  const t = SEG[i] ? (d - CUM[i]) / SEG[i] : 0;
+  return {
+    x: PTS[i].x + (PTS[i+1].x - PTS[i].x) * t,
+    y: PTS[i].y + (PTS[i+1].y - PTS[i].y) * t,
+  };
+}
+// Which stops the bus has already rolled past.
+function passedStops() {
+  const d = S.progress * TOTAL;
+  return STOPS.reduce((n,_,i) => d >= CUM[i] - 0.5 ? i+1 : n, 0);
+}
+function currentStop() {
+  return S.phase === "running" ? Math.min(passedStops(), STOPS.length-1) : -1;
+}
+
+// ---------------------------------------------------------------- actions
+function driverAction() {
+  if (S.phase === "idle") {
+    S.phase = "running";
+    log("system", "Trip started · bus " + BUS);
+    startTimer();
+  } else if (S.phase === "running") {
+    S.phase = "done";
+    S.progress = 1;
+    stopTimer();
+    // Anyone never tapped is an exception, not a silent gap.
+    STUDENTS.forEach(s => { if (!S.status[s.id]) S.status[s.id] = "unaccounted"; });
+    log("system", "Arrived at school");
+  }
+  save(); render();
+}
+
+function tap(id, kind) {
+  if (S.phase !== "running") return;
+  if (S.status[id] && S.status[id] !== "unaccounted") return;  // idempotent, like client_event_id
+  S.status[id] = kind;
+  log(kind, STUDENTS[id].name);
+  save(); render();
+}
+
+function log(kind, text) {
+  S.events.push({ kind, text, at: now() });
+}
+
+// ---------------------------------------------------------------- simulation
+function startTimer() {
+  stopTimer();
+  const step = 1 / (RUN_SECONDS * 4);
+  timer = setInterval(() => {
+    S.progress = Math.min(1, S.progress + step);
+    if (S.progress >= 1) { stopTimer(); }
+    save(); render();
+  }, 250);
+}
+function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+// ---------------------------------------------------------------- messages
+// Derived from status + progress — never stored, so it can't drift.
+function messagesFor(id) {
+  const st = S.status[id], stop = STOPS[STUDENTS[id].stop], out = [];
+  if (st === "boarded") {
+    out.push({ t: `${STUDENTS[id].name.split(" ")[0]} boarded bus ${BUS} at ${stop.name}.`,
+               link: true, at: stop.at });
+  }
+  if (st === "absent" || st === "unaccounted") {
+    out.push({ alert: true, at: stop.at,
+               t: `${STUDENTS[id].name.split(" ")[0]} did not board the bus at ${stop.name} today.` });
+  }
+  if (S.phase === "done" && st === "boarded") {
+    out.push({ t: `${STUDENTS[id].name.split(" ")[0]} reached school at ${hhmm(7*60+30+TRIP_MINUTES)}.`,
+               at: hhmm(7*60+30+TRIP_MINUTES) });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- map
+function mapSVG(opts = {}) {
+  const { mine = -1, label = true } = opts;
+  const line = PTS.map(p => `${p.x},${p.y}`).join(" ");
+  const bus = pointAt(S.progress);
+  const trailEnd = pointAt(S.progress);
+  // Trail = the polyline clipped at the bus.
+  const passed = [];
+  const d = S.progress * TOTAL;
+  for (let i = 0; i < PTS.length; i++) if (CUM[i] <= d) passed.push(`${PTS[i].x},${PTS[i].y}`);
+  passed.push(`${trailEnd.x},${trailEnd.y}`);
+
+  const dots = STOPS.map((s,i) => {
+    const done = passedStops() > i;
+    const cls = "stopdot" + (done ? " done" : "") + (i === mine ? " mine" : "");
+    const txt = label
+      ? `<text x="${s.x}" y="${s.y+20}" text-anchor="middle" class="${i===mine?'mine':''}">${
+          i === mine ? "YOUR STOP" : s.name.toUpperCase().slice(0,14)}</text>`
+      : "";
+    return `<circle cx="${s.x}" cy="${s.y}" r="6" class="${cls}" /><title>${s.name} · ${s.at}</title>${txt}`;
+  }).join("");
+
+  return `<svg class="map" viewBox="0 0 620 320" role="img" aria-label="Bus position along the route">
+    <polyline class="road" points="${line}" />
+    <polyline class="lane" points="${line}" />
+    ${S.progress > 0 ? `<polyline class="trail" points="${passed.join(" ")}" />` : ""}
+    ${dots}
+    <rect x="${SCHOOL.x-7}" y="${SCHOOL.y-7}" width="14" height="14" class="school" />
+    <text x="${SCHOOL.x}" y="${SCHOOL.y+22}" text-anchor="middle">SCHOOL</text>
+    <g class="bus" transform="translate(${bus.x-11},${bus.y-7})" style="transition:transform .25s linear">
+      <rect width="22" height="14" rx="3" />
+      <circle cx="6" cy="15" r="2.5" /><circle cx="16" cy="15" r="2.5" />
+    </g>
+  </svg>`;
+}
+
+// ---------------------------------------------------------------- render
+function counts() {
+  const v = Object.values(S.status);
+  return {
+    boarded: v.filter(x => x === "boarded").length,
+    absent:  v.filter(x => x === "absent").length,
+    unknown: v.filter(x => x === "unaccounted").length,
+    total:   STUDENTS.length,
+  };
+}
+
+function render() {
+  const c = counts(), cur = currentStop();
+
+  // -- chrome
+  document.getElementById("clock").textContent = now();
+  document.getElementById("pip").className = "pip" + (S.phase === "running" ? " on" : "");
+
+  // -- driver
+  document.getElementById("drv-count").textContent = `${c.boarded}/${c.total}`;
+  document.getElementById("ph-clock").textContent = now();
+  document.getElementById("ph-net").textContent =
+    `LTE · QUEUE ${S.events.filter(e => e.kind !== "system").length}`;
+  document.getElementById("drv-meter").style.width = (c.boarded / c.total * 100) + "%";
+
+  const act = document.getElementById("drv-action");
+  act.textContent = { idle:"Start trip", running:"Arrived at school", done:"Trip complete" }[S.phase];
+  act.disabled = S.phase === "done";
+  act.className = "bigbtn" + (S.phase === "done" ? " done" : "");
+
+  document.getElementById("roster").innerHTML = STOPS.map((stop,i) => {
+    const kids = STUDENTS.filter(s => s.stop === i);
+    return `<div class="stopgroup${i === cur ? " now" : ""}">
+      <div class="stophdr">
+        <span class="n">${String(i+1).padStart(2,"0")}</span>
+        <span class="s">${stop.name}</span>
+        <span class="t">${stop.at}</span>
+      </div>
+      ${kids.map(s => {
+        const st = S.status[s.id] || "";
+        const tag = { boarded:"Boarded", absent:"Absent", unaccounted:"No record" }[st] || "";
+        return `<button class="srow ${st}" ${S.phase !== "running" || st ? "disabled" : ""}
+                  onclick="tap(${s.id},'boarded')">
+          <span class="av">${s.name.split(" ").map(w=>w[0]).join("")}</span>
+          <span><span class="nm">${s.name}</span><br><span class="cl">${s.cls}</span></span>
+          <span class="tag">${tag}</span>
+        </button>`;
+      }).join("")}
+      ${S.phase === "running" && kids.some(s => !S.status[s.id])
+        ? `<div style="padding:.35rem 1rem .6rem">${kids.filter(s=>!S.status[s.id]).map(s =>
+            `<button class="xbtn" onclick="tap(${s.id},'absent')">${s.name.split(" ")[0]} absent</button>`
+          ).join(" ")}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  document.getElementById("map-driver").innerHTML = mapSVG({ label:false });
+  document.getElementById("q-state").textContent = S.events.length + " events · synced";
+  document.getElementById("log").innerHTML = S.events.length
+    ? [...S.events].reverse().map(e =>
+        `<div class="logrow"><span class="tm">${e.at}</span>
+         <span class="kd ${e.kind}">${e.kind}</span><span>${e.text}</span></div>`).join("")
+    : `<div class="empty">Nothing recorded yet.</div>`;
+
+  // -- parent
+  const sel = document.getElementById("kid");
+  if (!sel.options.length) {
+    sel.innerHTML = STUDENTS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+  }
+  const kid = +sel.value || 0;
+  const msgs = messagesFor(kid);
+  document.getElementById("thread").innerHTML = msgs.length
+    ? msgs.map(m => `<div class="bub ${m.alert ? "alert" : ""}">${m.t}${
+        m.link ? `<br><a href="#" onclick="return false">Track the bus &rarr;</a>` : ""
+      }<span class="ts">${m.at}</span></div>`).join("")
+    : `<div class="empty">No messages yet &mdash; the trip hasn't reached this child's stop.</div>`;
+
+  const kidStop = STUDENTS[kid].stop;
+  document.getElementById("map-parent").innerHTML = mapSVG({ mine: kidStop });
+  const away = Math.max(0, kidStop - passedStops() + 1);
+  document.getElementById("eta").textContent =
+    S.phase === "done" ? "Trip complete"
+    : S.phase === "idle" ? "Not started"
+    : away > 0 ? `${away} stop${away>1?"s":""} away` : "Passed your stop";
+
+  // -- school
+  document.getElementById("stats").innerHTML = `
+    <div class="stat good"><div class="n">${c.boarded}</div><div class="l">On board</div></div>
+    <div class="stat"><div class="n">${c.absent}</div><div class="l">Marked absent</div></div>
+    <div class="stat ${c.unknown ? "warn" : ""}"><div class="n">${c.unknown}</div><div class="l">Unaccounted</div></div>
+    <div class="stat"><div class="n">${passedStops()}/${STOPS.length}</div><div class="l">Stops cleared</div></div>
+    <div class="stat"><div class="n">${S.events.filter(e=>e.kind!=="system").length}</div><div class="l">Parent alerts sent</div></div>`;
+
+  const ex = STUDENTS.filter(s => ["absent","unaccounted"].includes(S.status[s.id]));
+  document.getElementById("exceptions").innerHTML = ex.length
+    ? ex.map(s => `<div class="logrow">
+        <span class="kd ${S.status[s.id]}">${S.status[s.id] === "absent" ? "absent" : "no record"}</span>
+        <span><b>${s.name}</b> &middot; ${s.cls} &middot; ${STOPS[s.stop].name}</span></div>`).join("")
+    : `<div class="empty">${S.phase === "idle" ? "Trip hasn't started." : "Nothing to flag."}</div>`;
+
+  document.getElementById("map-school").innerHTML = mapSVG({ label:false });
+  document.getElementById("fleet-state").textContent =
+    `${BUS} · ${ {idle:"scheduled", running:"en route", done:"arrived"}[S.phase] }`;
+}
+
+// ---------------------------------------------------------------- costing
+const RATE = 0.1150, GST = 1.18;          // Meta utility msg to +91, card eff. 1 Jul 2026
+const PER_MSG = RATE * GST;               // Rs 0.1357 delivered
+const SCHOOL_DAYS = 22;
+const OPT = { msg: 4, grd: 1 };
+
+const inr = n => "\u20B9" + Math.round(n).toLocaleString("en-IN");
+const lakh = n => n >= 1e5 ? "\u20B9" + (n/1e5).toFixed(2) + " L" : inr(n);
+
+function setOpt(k, v, el) {
+  OPT[k] = v;
+  [...el.parentNode.children].forEach(b => b.setAttribute("aria-pressed", String(b === el)));
+  costs();
+}
+
+function costs() {
+  const stu = +document.getElementById("i-stu").value;
+  const prc = +document.getElementById("i-prc").value;
+  document.getElementById("v-stu").textContent = stu.toLocaleString("en-IN");
+  document.getElementById("v-prc").textContent = inr(prc);
+
+  const msgs    = stu * OPT.msg * OPT.grd * SCHOOL_DAYS;
+  const waCost  = msgs * PER_MSG;
+  // Supabase + Vercel are one platform shared by every tenant, so a school's
+  // share is variable, not a fixed per-school fee. Small schools stay profitable.
+  const infra   = stu * 1.5;
+  const cost    = waCost + infra;
+  const revenue = stu * prc;
+  const profit  = revenue - cost;
+  const margin  = revenue ? profit / revenue * 100 : 0;
+
+  document.getElementById("v-msgs").textContent = msgs.toLocaleString("en-IN") + " messages";
+  document.getElementById("out").innerHTML = `
+    <div class="o cost"><div class="n">${inr(waCost)}</div><div class="l">WhatsApp</div></div>
+    <div class="o"><div class="n">${inr(infra)}</div><div class="l">Infra share</div></div>
+    <div class="o rev"><div class="n">${inr(revenue)}</div><div class="l">Revenue</div></div>
+    <div class="o"><div class="n">${margin > 0 ? Math.round(margin) : 0}%</div><div class="l">Gross margin</div></div>`;
+
+  document.getElementById("out-yr").innerHTML = `
+    <div class="o cost"><div class="n">${lakh(cost*10)}</div><div class="l">Total cost</div></div>
+    <div class="o rev"><div class="n">${lakh(revenue*10)}</div><div class="l">Revenue</div></div>
+    <div class="o"><div class="n">${lakh(profit*10)}</div><div class="l">Gross profit</div></div>`;
+
+  const perStu = cost / stu;
+  document.getElementById("c-note").innerHTML = profit < 0
+    ? `<b>Underwater.</b> At ${inr(prc)} a student you lose ${inr(-profit)} a month. Break-even is ${inr(Math.ceil(perStu))} per student.`
+    : `<b>${inr(perStu)} per student</b> to serve, ${inr(prc)} charged. ${
+        OPT.grd === 2 ? "Notifying both parents is doubling the message bill &mdash; sell the second number as an add-on. " : ""
+      }Break-even sits at ${inr(Math.ceil(perStu))}.`;
+}
+
+function show(v) {
+  ["driver","parent","school","costs"].forEach(n => {
+    document.getElementById("view-" + n).hidden = n !== v;
+    document.getElementById("tab-" + n).setAttribute("aria-selected", String(n === v));
+  });
+}
+
+// ---------------------------------------------------------------- self-check
+(function selfCheck() {
+  console.assert(CUM.length === PTS.length && CUM[CUM.length-1] > 0, "cumulative distances must ascend");
+  console.assert(Math.abs(pointAt(0).x - PTS[0].x) < 0.01, "frac 0 sits on the first stop");
+  console.assert(Math.abs(pointAt(1).x - SCHOOL.x) < 0.01, "frac 1 sits at the school");
+  const save = { ...S };
+  S = { ...BLANK, phase:"running", status:{}, events:[] };
+  tap(0, "boarded"); tap(0, "absent");               // replayed queue must not double-record
+  console.assert(S.status[0] === "boarded" && S.events.length === 1, "taps are idempotent");
+  console.assert(messagesFor(0).length === 1, "one boarded message per child");
+  S = save;
+  console.assert(Math.abs(PER_MSG - 0.1357) < 0.0001, "per-message rate incl GST");
+  console.assert(Math.round(5000 * 4 * 1 * SCHOOL_DAYS * PER_MSG) === 59708, "5k students / 4 msgs = Rs 59,708");
+})();
+
+render();
+costs();
+if (S.phase === "running") startTimer();
+</script>
+</body>
+</html>
