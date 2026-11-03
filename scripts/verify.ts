@@ -5,11 +5,11 @@
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, type SQL } from "drizzle-orm";
 import { db, forSchool } from "../db";
 import * as s from "../db/schema";
 
-const count = async (q: { execute: (x: any) => Promise<any> }, table: string) =>
+const count = async (q: { execute: (x: SQL) => Promise<{ rows: { n: number }[] }> }, table: string) =>
   Number((await q.execute(sql.raw(`select count(*)::int as n from ${table}`))).rows[0].n);
 
 /**

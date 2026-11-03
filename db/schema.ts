@@ -32,6 +32,9 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email"),
   phoneE164: text("phone_e164"),
+  // MVP auth: password-based for both admin and driver, so login isn't
+  // blocked on the WhatsApp/SMS OTP channel decision. Swap for OTP later.
+  passwordHash: text("password_hash"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
@@ -39,6 +42,20 @@ export const users = pgTable("users", {
   uniqueIndex("users_phone_uq").on(t.phoneE164),
   index("users_school_idx").on(t.schoolId),
 ]);
+
+/**
+ * Pre-signup leads from the public landing page. Deliberately not
+ * school-scoped — these people don't have a school_id yet.
+ */
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  schoolName: text("school_name").notNull(),
+  contactName: text("contact_name").notNull(),
+  email: text("email").notNull(),
+  phoneE164: text("phone_e164"),
+  studentCount: integer("student_count"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const students = pgTable("students", {
   id: uuid("id").primaryKey().defaultRandom(),

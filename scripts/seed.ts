@@ -1,6 +1,10 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import { sql } from "drizzle-orm";
 import { Pool } from "pg";
+import bcrypt from "bcryptjs";
 import * as s from "../db/schema";
+
+const DEMO_PASSWORD = "routeboard-demo";
 
 // Seeding crosses tenant boundaries, so it runs as the owner (RLS-exempt).
 const pool = new Pool({ connectionString: process.env.MIGRATE_DATABASE_URL });
@@ -28,20 +32,25 @@ const today = () => new Date().toISOString().slice(0, 10);
 const phone = (n: number) => "+9198" + String(45000000 + n * 137).padStart(8, "0");
 
 async function main() {
-  // Order matters: children reference the school, and FKs are not deferred.
-  await db.delete(s.schools);
+  // trip_events is append-only (a trigger blocks DELETE, even via cascade),
+  // but TRUNCATE never fires row-level triggers — this is the one place in
+  // the app that is allowed to wipe history, and only because it runs as the
+  // RLS-exempt owner against a disposable dev/demo database.
+  await db.execute(sql`truncate table schools, leads restart identity cascade`);
 
   const [school] = await db.insert(s.schools)
     .values({ name: "Vidya Vihar School", timezone: "Asia/Kolkata" }).returning();
 
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+
   const [driver] = await db.insert(s.users).values({
     schoolId: school.id, role: "driver", fullName: "Ramesh Kumar",
-    phoneE164: "+919845012345",
+    phoneE164: "+919845012345", passwordHash,
   }).returning();
 
   await db.insert(s.users).values({
     schoolId: school.id, role: "admin", fullName: "Transport Desk",
-    email: "transport@vidyavihar.example",
+    email: "transport@vidyavihar.example", passwordHash,
   });
 
   const [bus] = await db.insert(s.buses)
@@ -91,7 +100,10 @@ async function main() {
   ${school.name}  ${school.id}
     ${stopRows.length} stops, ${studentRows.length} students, 1 route, 1 bus, 1 trip (${today()})
   ${other.name}  ${other.id}
-    2 students`);
+    2 students
+
+  login — admin:  transport@vidyavihar.example / ${DEMO_PASSWORD}
+  login — driver: +919845012345 / ${DEMO_PASSWORD}`);
   await pool.end();
 }
 

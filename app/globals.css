@@ -1,49 +1,242 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/*
+  THE WALL TIMETABLE
+  ------------------
+  The printed-and-pencilled chart in the school transport office: a thick-ruled
+  grid, unequal columns, codes in condensed caps, and the week's corrections
+  written over the print in a second hand. Six materials, no more —
+  cool bond paper, graphite print, duplicator blue for every rule and fill,
+  pencil for the annotation layer, one red pen kept for the exception, and the
+  yellow of the bus itself — on the vehicle wherever it appears, and as the
+  highlighter the office runs over the line that matters. Yellow is never a
+  decoration either: if it is yellow, it is the bus, or it is live.
+*/
+
+@theme {
+  --color-wall:    #DCE1E7;  /* the board the chart is pinned to */
+  --color-sheet:   #FBFCFD;  /* the sheet itself */
+  --color-sheet-2: #F2F5F8;  /* alternating band, header fills */
+  --color-ink:     #1B2026;  /* graphite print */
+  --color-pencil:  #5C6276;  /* the second hand: annotations, secondary type */
+  --color-faint:   #6E7689;  /* captions, disabled */
+  --color-blue:    #2E3A8C;  /* duplicator ink — heavy rules, fills, links */
+  --color-blue-2:  #6675C4;  /* mid rule */
+  --color-blue-3:  #C3CAE6;  /* hairline rule */
+  --color-blue-4:  #E7EAF5;  /* wash fill */
+  --color-red:     #C62B1F;  /* the red pen. Exceptions only. Never decoration. */
+  --color-red-2:   #FBE6E3;
+  --color-bus:     #F0AE07;  /* school bus yellow — the vehicle, and the highlighter */
+  --color-bus-2:   #FBDE92;  /* highlighter stroke, live fills */
+  --color-bus-3:   #FDF3DC;  /* the palest wash */
+
+  --font-sans:   var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-narrow: var(--font-archivo-narrow), var(--font-archivo), sans-serif;
+  --font-typed:  var(--font-courier-prime), ui-monospace, monospace;
+
+  --ease-chart: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { height: 100%; }
 
-html {
-  height: 100%;
-}
-
-html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-wall);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+* { box-sizing: border-box; }
+
+/* The parts we did not draw still belong to the chart. */
+::selection { background: var(--color-blue); color: var(--color-sheet); }
+:root { accent-color: var(--color-blue); caret-color: var(--color-blue); }
+
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 1px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--color-sheet-2); }
+  ::-webkit-scrollbar-thumb { background: var(--color-blue-3); border: 3px solid var(--color-sheet-2); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-blue-2); }
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* ---------------------------------------------------------------- chart */
+
+/*
+  One ruled grid, one set of rules. The outer frame is heavy the way a printed
+  chart's frame is heavy; everything inside is a hairline until a column
+  division earns a mid rule.
+*/
+.chart {
+  background: var(--color-sheet);
+  border: 2px solid var(--color-blue);
+  box-shadow: 0 1px 0 var(--color-blue-3), 0 14px 28px -20px rgb(27 32 38 / 0.45);
+}
+
+.chart-head {
+  background: var(--color-sheet-2);
+  border-bottom: 2px solid var(--color-blue);
+  font-family: var(--font-narrow);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.6875rem;
+  color: var(--color-blue);
+}
+
+.rule-y { border-left: 1px solid var(--color-blue-3); }
+.rule-y-bold { border-left: 1px solid var(--color-blue-2); }
+.rule-x { border-top: 1px solid var(--color-blue-3); }
+
+/* A code as the office typewriter set it. */
+.typed {
+  font-family: var(--font-typed);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.stamp {
+  font-family: var(--font-narrow);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+  font-size: 0.625rem;
+}
+
+/* The pencilled hand: corrections, live annotations, the thing not printed. */
+.pencil {
+  color: var(--color-pencil);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(92 98 118 / 0.1) 0 1px,
+    transparent 1px 6px
+  );
+}
+
+/* Struck through in red pen, the way an absence is marked on paper. */
+/* Scoped to the text it crosses, not to the cell — a pen strikes a word. */
+.struck { position: relative; display: inline-block; color: var(--color-red); }
+.struck::after {
+  content: "";
+  position: absolute;
+  inset: 50% -2px auto -2px;
+  height: 1.5px;
+  background: var(--color-red);
+  transform: rotate(-1.4deg);
+  transform-origin: left center;
+}
+
+/*
+  The highlighter. A real marker does not cover the whole line height and does
+  not stop square: it sits inside the x-height and runs a little past the word.
+*/
+.marked {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 24%,
+    var(--color-bus-2) 24% 91%,
+    transparent 91%
+  );
+  background-repeat: no-repeat;
+  padding-inline: 0.08em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Moving right now. The only thing on any surface that pulses. */
+.live-dot {
+  width: 0.5rem; height: 0.5rem;
+  background: var(--color-bus);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-bus) 70%, transparent);
+  animation: live 2.4s var(--ease-chart) infinite;
+}
+@keyframes live {
+  70%, 100% { box-shadow: 0 0 0 0.5rem color-mix(in srgb, var(--color-bus) 0%, transparent); }
+}
+
+/* ---------------------------------------------------------------- motion */
+
+/*
+  The one authored moment: the chart writes itself, cell by cell, left to
+  right across the day — which is literally what happens as a driver taps.
+*/
+@keyframes write-in {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to   { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+.writes-in {
+  animation: write-in 0.5s var(--ease-chart) both;
+  animation-delay: calc(var(--cell) * 70ms);
+}
+
+/* A sheet that is still below the fold has not been read yet: hold its cells
+   blank until it is, so the writing happens in front of the reader. */
+[data-cells="false"] .writes-in { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .writes-in, .live-dot { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
+
+.leaflet-container { font-family: inherit; background: var(--color-sheet-2); }
+.leaflet-bar a { color: var(--color-blue); }
+
+/* ---------------------------------------------------------------- forms */
+
+/* A ruled box you write into, like the blanks on a printed form. */
+.field {
+  width: 100%;
+  background: var(--color-sheet);
+  border: 1px solid var(--color-blue-2);
+  padding: 0.5rem 0.625rem;
+  font-family: var(--font-typed);
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+}
+.field::placeholder { color: var(--color-faint); }
+.field:focus { border-color: var(--color-blue); box-shadow: inset 0 -2px 0 var(--color-blue); }
+.field:disabled { background: var(--color-sheet-2); color: var(--color-faint); }
+
+.field-label {
+  display: block;
+  font-family: var(--font-narrow);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+  font-size: 0.625rem;
+  color: var(--color-pencil);
+  margin-bottom: 0.375rem;
+}
+
+/* The one primary action: inked solid, the way a stamp is. */
+.btn {
+  font-family: var(--font-narrow);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background: var(--color-blue);
+  color: var(--color-sheet);
+  padding: 0.6875rem 1.25rem;
+  border: 1px solid var(--color-blue);
+  transition: background-color 0.15s var(--ease-chart);
+}
+.btn:hover:not(:disabled) { background: var(--color-ink); border-color: var(--color-ink); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-quiet {
+  background: var(--color-sheet);
+  color: var(--color-blue);
+}
+.btn-quiet:hover:not(:disabled) { background: var(--color-blue-4); color: var(--color-blue); border-color: var(--color-blue); }
