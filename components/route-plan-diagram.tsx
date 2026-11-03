@@ -4,8 +4,8 @@
   panels in the same positions — that repetition is the whole point, because
   what changes between panels is only what has been *decided* about them.
 
-  Illustration, and labelled as such on the page. The localities are plausible
-  Pune ones, not a real school's.
+  Illustration, and labelled as such on the page. The colony names are
+  Rohtak's; the grid is not a map of it.
 */
 const INK = "#1B2026";
 const PENCIL = "#5C6276";
@@ -18,10 +18,10 @@ const SHEET = "#FBFCFD";
 
 /** Cluster centres, and the four homes that fall around each. */
 const STOPS = [
-  { x: 78, y: 112, name: "Kothrud Depot", time: "07:05", n: 4 },
-  { x: 214, y: 100, name: "Sai Residency", time: "07:12", n: 4 },
-  { x: 70, y: 206, name: "Karve Nagar", time: "07:09", n: 4 },
-  { x: 208, y: 200, name: "Nal Stop", time: "07:17", n: 4 },
+  { x: 78, y: 112, name: "Model Town", time: "07:05", n: 4 },
+  { x: 214, y: 100, name: "Shivaji Colony", time: "07:12", n: 4 },
+  { x: 70, y: 206, name: "DLF Colony", time: "07:09", n: 4 },
+  { x: 208, y: 200, name: "Sector 14", time: "07:17", n: 4 },
 ];
 const JITTER = [
   [-20, -13], [17, -18], [-10, 17], [22, 10],
@@ -72,7 +72,7 @@ export default function RoutePlanDiagram() {
           <line x1={HOMES[1].x} y1={HOMES[1].y} x2={160} y2={56} stroke={BLUE_3} strokeWidth={1} />
           <rect x={112} y={42} width={168} height={20} fill={BLUE_4} stroke={BLUE_3} strokeWidth={1} />
           <text x={120} y={56} fill={PENCIL} fontSize={9.5} fontFamily="var(--font-typed), monospace">
-            Flat 3B, behind Reliance Fresh
+            H.No 412, Gali 5, near Gaushala
           </text>
           <text x={0} y={306} fill={FAINT} fontSize={10.5}>
             A spreadsheet column, not coordinates.

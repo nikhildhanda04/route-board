@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { strokes, buildings, ROUTES, STOPS, SCHOOL, at, HALF, T, type P3, type Stroke } from "./city";
+import { strokes, buildings, ROUTES, STOPS, SCHOOL, AREAS, at, HALF, T, type P3, type Stroke } from "./city";
 
 /*
   An isometric city drawn in ink, a stroke at a time, with the school's two
@@ -150,6 +150,7 @@ function ribbon(path: P3[], color: THREE.Color, start: number, width = 1.6) {
 export default function RouteCity({ onDrawn }: { onDrawn?: () => void }) {
   const host = useRef<HTMLDivElement>(null);
   const labels = useRef<(HTMLDivElement | null)[]>([]);
+  const areaLabels = useRef<(HTMLDivElement | null)[]>([]);
   const replay = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -256,14 +257,19 @@ export default function RouteCity({ onDrawn }: { onDrawn?: () => void }) {
        through React, which would re-render sixty times a second. */
     const anchors = [...STOPS.map((s) => at(s.ij)), at(SCHOOL.ij)].map((p) => new THREE.Vector3(p[0] + 3.2, 11, p[2]));
     anchors[anchors.length - 1].setY(14);
+    const areaAnchors = AREAS.map((a) => {
+      const p = at(a.ij);
+      return new THREE.Vector3(p[0], 0, p[2]);
+    });
     const place = () => {
       const w = el.clientWidth, h = el.clientHeight;
-      anchors.forEach((a, i) => {
-        const node = labels.current[i];
+      const put = (a: THREE.Vector3, node: HTMLDivElement | null) => {
         if (!node) return;
         const p = a.clone().project(camera);
         node.style.transform = `translate(${(p.x * 0.5 + 0.5) * w}px, ${(-p.y * 0.5 + 0.5) * h}px)`;
-      });
+      };
+      anchors.forEach((a, i) => put(a, labels.current[i]));
+      areaAnchors.forEach((a, i) => put(a, areaLabels.current[i]));
     };
 
     let raf = 0;
@@ -291,10 +297,16 @@ export default function RouteCity({ onDrawn }: { onDrawn?: () => void }) {
 
       if (!announced && (t >= END || reduce)) { announced = true; onDrawn?.(); }
 
-      // Labels appear with their own pin, not before it.
+      // Labels appear with their own pin, not before it. The colony names come
+      // in earlier, with the buildings they belong to — they are the place, and
+      // the place is there before anyone plans a route across it.
       anchors.forEach((_, i) => {
         const node = labels.current[i];
         if (node) node.style.opacity = t >= T.pins + i * 0.1 + 0.3 ? "1" : "0";
+      });
+      areaAnchors.forEach((_, i) => {
+        const node = areaLabels.current[i];
+        if (node) node.style.opacity = t >= T.buildings + T.buildingSpread + i * 0.08 ? "1" : "0";
       });
 
       place();
@@ -336,6 +348,20 @@ export default function RouteCity({ onDrawn }: { onDrawn?: () => void }) {
               {s.time}
               {"children" in s ? ` · ${s.children} children` : ""}
             </div>
+          </div>
+        </div>
+      ))}
+
+      {AREAS.map((a, i) => (
+        <div
+          key={a.name}
+          ref={(n) => { areaLabels.current[i] = n; }}
+          className="absolute top-0 left-0 pointer-events-none transition-opacity duration-700 opacity-0"
+        >
+          {/* A paper chip, because a colony name has to survive being read over
+              a rooftop — the labels ignore depth, the type must not. */}
+          <div className="stamp text-faint whitespace-nowrap -translate-x-1/2 -translate-y-1/2 bg-sheet/90 px-1.5 py-0.5">
+            {a.name}
           </div>
         </div>
       ))}

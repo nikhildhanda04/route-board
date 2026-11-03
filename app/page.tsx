@@ -388,7 +388,8 @@ export default function LandingPage() {
                 </div>
                 <footer className="px-5 py-4 border-t-2 border-blue bg-sheet-2">
                   <p className="text-[0.8125rem] leading-relaxed text-pencil max-w-[80ch]">
-                    Any address the geocoder was unsure of lands in a review list on the map rather than
+                    Colony names are Rohtak&apos;s; the grid is illustrative and not a map of it. Any
+                    address the geocoder was unsure of lands in a review list on the map rather than
                     quietly inside a route — a child placed four kilometres from home produces a plan that
                     looks correct and sends a bus to the wrong kerb.
                   </p>

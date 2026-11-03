@@ -35,15 +35,37 @@ function rng(seed: number) {
 
 /* ---------------------------------------------------------------- the places */
 
+/*
+  The names are Rohtak's own colonies, because a transport head reads "Shivaji
+  Colony" and knows what kind of street that is, where "Stop 3" tells them
+  nothing. The grid underneath is illustrative and is not a map of Rohtak —
+  the page says so.
+*/
+
 /** Grid intersections, as [i, j] into the street lines. */
 export const STOPS = [
-  { ij: [1, 1] as const, name: "Kothrud Depot", time: "07:05", children: 11 },
-  { ij: [4, 1] as const, name: "Sai Residency", time: "07:12", children: 9 },
-  { ij: [1, 4] as const, name: "Karve Nagar", time: "07:09", children: 12 },
-  { ij: [5, 4] as const, name: "Nal Stop", time: "07:17", children: 8 },
+  { ij: [1, 1] as const, name: "Model Town", time: "07:05", children: 11 },
+  { ij: [4, 1] as const, name: "Shivaji Colony", time: "07:12", children: 9 },
+  { ij: [1, 4] as const, name: "DLF Colony", time: "07:09", children: 12 },
+  { ij: [5, 4] as const, name: "Sector 14", time: "07:17", children: 8 },
 ];
 export const SCHOOL = { ij: [3, 6] as const, name: "School", time: "07:35" };
 
+/*
+  The colonies the buses pass through but do not stop in. Positioned at block
+  centres — hence the half-steps — and set faint, because they are the place,
+  not the plan.
+*/
+export const AREAS = [
+  { ij: [0.5, 0.5] as const, name: "Prem Nagar" },
+  { ij: [5.5, 1.5] as const, name: "Vikas Nagar" },
+  { ij: [2.5, 2.5] as const, name: "Subhash Nagar" },
+  { ij: [0.5, 2.0] as const, name: "Kamla Nagar" },
+  { ij: [3.5, 4.5] as const, name: "HUDA Complex" },
+  { ij: [1.5, 5.5] as const, name: "Jawahar Nagar" },
+];
+
+/** Fractional indices are allowed: a colony name sits at a block centre. */
 export const at = (ij: readonly [number, number]): P3 => [line(ij[0]), 0, line(ij[1])];
 
 /**
