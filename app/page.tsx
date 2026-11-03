@@ -4,7 +4,7 @@ import LeadForm from "./leads/LeadForm";
 import { Cell, Sheet, BusIcon, SmsIcon, StopIcon, TickIcon } from "@/components/chart";
 import ParentProof from "@/components/parent-proof";
 import Reveal from "@/components/reveal";
-import RoutePlanDiagram from "@/components/route-plan-diagram";
+import RouteCityOrDiagram from "@/components/route-city";
 
 /*
   Demonstration data. Synthetic, and labelled as such on the page — the chart
@@ -365,9 +365,10 @@ export default function LandingPage() {
             <Reveal delay={0.08}>
               <Sheet
                 title="Addresses in, route sheet out"
+                meta="drawn live"
                 action={<span className="stamp text-pencil">Illustration · II &amp; III in build</span>}
               >
-                <RoutePlanDiagram />
+                <RouteCityOrDiagram />
                 <div className="grid sm:grid-cols-3 border-t-2 border-blue">
                   {[
                     ["Model", "Reads an address for its locality and landmark, then names the stop its children fall into."],

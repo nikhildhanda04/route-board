@@ -18,7 +18,8 @@
     "db:setup-roles": "psql \"$(grep MIGRATE_DATABASE_URL .env.local | cut -d= -f2-)\" -f scripts/setup-roles.sql",
     "form:doc": "node scripts/onboarding-doc.mjs",
     "icons": "node scripts/make-icons.mjs",
-    "check:gps": "tsx scripts/check-gps.ts"
+    "check:gps": "tsx scripts/check-gps.ts",
+    "check:city": "tsx scripts/check-city.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -36,6 +37,7 @@
     "react-dom": "19.3.0",
     "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
+    "three": "^0.170.0",
     "uuid": "^14.0.3",
     "zod": "^4.6.7"
   },
@@ -48,6 +50,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.170.0",
     "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
