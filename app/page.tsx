@@ -4,6 +4,7 @@ import LeadForm from "./leads/LeadForm";
 import { Cell, Sheet, BusIcon, SmsIcon, StopIcon, TickIcon } from "@/components/chart";
 import ParentProof from "@/components/parent-proof";
 import Reveal from "@/components/reveal";
+import RoutePlanDiagram from "@/components/route-plan-diagram";
 
 /*
   Demonstration data. Synthetic, and labelled as such on the page — the chart
@@ -342,78 +343,49 @@ export default function LandingPage() {
 
         {/* ------------------------------------------------- the routes */}
         {/*
-          The planner is built and the generation on top of it is not, so the
-          sheet below says which step is which. Steps I and IV ship today; the
-          two in the middle are in build, and the stamp on the header says so
-          rather than the page implying otherwise.
+          The second half of the product, and the page used to describe it in
+          four columns of prose. It is a spatial transformation, so it is drawn
+          instead: the same sixteen homes in all three panels, with only the
+          decisions about them changing.
         */}
         <section id="routes" className="border-y-2 border-blue bg-sheet-2">
           <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
-            <Reveal className="max-w-[56ch] mb-10 sm:mb-12">
+            <Reveal className="max-w-[54ch] mb-10 sm:mb-12">
+              <div className="stamp text-blue mb-4">The other half of the product</div>
               <h2 className="font-narrow font-bold uppercase text-[clamp(1.75rem,4vw,2.75rem)] leading-[0.95] tracking-[-0.02em] text-balance">
-                The route sheet writes itself
+                It also plans the routes
               </h2>
               <p className="mt-5 text-[1.0625rem] leading-relaxed text-pencil">
-                Before a single bus moves there are two days of work: six hundred addresses turned into
-                stops, children grouped onto buses nobody has overfilled, and a time written against every
-                stop. Hand over the spreadsheet you already keep and get a draft back.
-              </p>
-              <p className="mt-4 text-[0.9375rem] leading-relaxed text-pencil">
-                A model reads the addresses, because only a model can make sense of{" "}
-                <span className="marked">behind the Reliance Fresh</span>. An algorithm builds the routes,
-                because only an algorithm can prove no bus is over capacity and no child is aboard too long.
-                Then a model explains, in a sentence, why a stop moved.
+                Not just messages. Hand over the student list you already keep and RouteBoard turns six
+                hundred addresses into stops, stops into routes no bus is overloaded on, and a time against
+                every one of them.
               </p>
             </Reveal>
 
             <Reveal delay={0.08}>
               <Sheet
-                title="How a route sheet gets made"
-                action={<span className="stamp text-pencil">II &amp; III in build</span>}
+                title="Addresses in, route sheet out"
+                action={<span className="stamp text-pencil">Illustration · II &amp; III in build</span>}
               >
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4">
+                <RoutePlanDiagram />
+                <div className="grid sm:grid-cols-3 border-t-2 border-blue">
                   {[
-                    {
-                      n: "I",
-                      t: "Your spreadsheet",
-                      by: "Office · works today",
-                      d: "The student export you already maintain, addresses exactly as they are written — landmarks, shorthand, half a street name. Nobody retypes anything.",
-                    },
-                    {
-                      n: "II",
-                      t: "Addresses to stops",
-                      by: "Model",
-                      d: "Each address is read for its locality and its landmark, then geocoded. Children within a short walk of one another become one stop, named what the neighbourhood actually calls it.",
-                    },
-                    {
-                      n: "III",
-                      t: "Stops to routes",
-                      by: "Algorithm",
-                      d: "Stops are split across your buses against their real capacities and ordered for the shortest run, under a ceiling you set on how long any child may sit on board.",
-                    },
-                    {
-                      n: "IV",
-                      t: "Times, and your corrections",
-                      by: "Planner · works today",
-                      d: "Every stop gets a time counted backwards from the first bell. A draft is a draft: you drag the order and move a child in the same planner you use now.",
-                    },
-                  ].map((m, i) => (
+                    ["Model", "Reads an address for its locality and landmark, then names the stop its children fall into."],
+                    ["Algorithm", "Splits stops across your buses against real capacities and orders each run. It can prove the limits hold; a model cannot."],
+                    ["You", "A draft is a draft. Drag the order, move a child, in the planner you already use."],
+                  ].map(([who, what], i) => (
                     <Reveal
-                      key={m.n}
+                      key={who}
                       as="article"
-                      delay={i * 0.09}
-                      className={`p-6 sm:p-8 bg-sheet ${i > 0 ? "rule-y-bold" : ""} border-b border-blue-3 lg:border-b-0`}
+                      delay={i * 0.08}
+                      className={`px-5 py-5 bg-sheet ${i > 0 ? "sm:rule-y-bold" : ""} ${i > 0 ? "border-t border-blue-3 sm:border-t-0" : ""}`}
                     >
-                      <div className="flex items-baseline justify-between text-blue">
-                        <span className="font-narrow font-bold text-2xl leading-none">{m.n}</span>
-                        <span className="typed text-[0.6875rem] text-faint">{m.by}</span>
-                      </div>
-                      <h3 className="stamp text-ink mt-4">{m.t}</h3>
-                      <p className="mt-3.5 text-[0.9375rem] leading-relaxed text-pencil">{m.d}</p>
+                      <div className="stamp text-blue">{who}</div>
+                      <p className="mt-2 text-[0.9375rem] leading-relaxed text-pencil">{what}</p>
                     </Reveal>
                   ))}
                 </div>
-                <footer className="px-4 sm:px-8 py-4 border-t-2 border-blue bg-sheet-2">
+                <footer className="px-5 py-4 border-t-2 border-blue bg-sheet-2">
                   <p className="text-[0.8125rem] leading-relaxed text-pencil max-w-[80ch]">
                     Any address the geocoder was unsure of lands in a review list on the map rather than
                     quietly inside a route — a child placed four kilometres from home produces a plan that
@@ -431,12 +403,19 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-[1fr_1.4fr] gap-12 lg:gap-20 items-start">
               <Reveal>
                 <h2 className="font-narrow font-bold uppercase text-[clamp(1.75rem,4vw,2.75rem)] leading-[0.95] tracking-[-0.02em] text-balance">
-                  The cost is the messages
+                  What you collect,
+                  <br />
+                  and what is left
                 </h2>
                 <p className="mt-5 text-[1.0625rem] leading-relaxed text-pencil max-w-[46ch]">
-                  There is no per-bus fee and no hardware line. Almost the entire bill is the messages
-                  themselves, which means it scales with the number of children you notify and nothing else.
-                  Planning the routes is the one other line, and it is charged once, at setup.
+                  Schools charge a transport fee already. The sheet puts the whole arithmetic in one place:
+                  what comes in from the children on buses, what the service costs to run every month, and
+                  what stays with the school.
+                </p>
+                <p className="mt-4 text-[0.9375rem] leading-relaxed text-pencil max-w-[46ch]">
+                  No per-bus fee and no hardware line. The running cost is the messages, the hosting behind
+                  them and the upkeep — nothing that scales with how many buses you own. Planning the routes
+                  is a separate charge, paid once at setup, so it is kept out of the monthly margin.
                 </p>
                 <p className="mt-4 text-[0.9375rem] leading-relaxed text-pencil max-w-[46ch]">
                   Move the figures to your own school. We have not set a published price yet, which is
