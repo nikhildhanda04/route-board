@@ -52,6 +52,31 @@ npm run check:flow    # every notifiable event has an outbox row that resolves
 npm run db:verify     # RLS actually refuses cross-tenant reads
 ```
 
+## Deploying
+
+Set these in the Vercel project before the first deploy: `DATABASE_URL`,
+`MIGRATE_DATABASE_URL`, `AUTH_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`,
+and the three `TWILIO_*` values when you have them. The build does not need a
+database — every data route is dynamic — but every page does at runtime.
+
+**The outbox needs a minute-level sweep, and Vercel's Hobby plan cannot give
+it one.** Hobby allows a cron at most once a day, so `vercel.json` declares a
+02:00 sweep and nothing more. The normal path does not depend on it: a driver
+tap drains that school's outbox inline through `after()`, so a parent is
+messaged within seconds. The cron exists for the ones that failed — a provider
+outage, a rate limit — and a 24-hour retry window is not acceptable for those.
+
+Until the project is on Pro, point an external scheduler at the endpoint every
+minute or two:
+
+```
+GET https://<your-domain>/api/cron/outbox
+Authorization: Bearer <CRON_SECRET>
+```
+
+On Pro, set the schedule in `vercel.json` back to `* * * * *` and drop the
+external scheduler.
+
 ## Other scripts
 
 ```bash
