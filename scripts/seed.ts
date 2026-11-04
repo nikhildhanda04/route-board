@@ -26,7 +26,24 @@ const STUDENTS = [
   ["Arjun Reddy","7B",3], ["Saanvi Joshi","5A",3],
   ["Neel Kulkarni","3B",4], ["Tara Bose","8C",4],
   ["Advait Sharma","6C",5], ["Zoya Khan","4B",5],
+  // Enough of a roll that route planning has something to decide: one bus
+  // cannot take them all, and the stops have to be worked out rather than
+  // read off the existing sheet.
+  ["Kiara Fernandes","5C",0], ["Aryan Verma","7A",0], ["Myra Chandran","3C",0],
+  ["Dhruv Bhat","8B",1], ["Avni Prasad","4A",1], ["Reyansh Nayak","6A",1],
+  ["Anika Desai","5A",2], ["Vivaan Hegde","3A",2], ["Sara Mathew","7B",2],
+  ["Kabir Anand","4B",3], ["Riya Sundar","8A",3], ["Aditya Rao","6B",3],
+  ["Pari Chopra","3B",4], ["Yash Murthy","5B",4], ["Navya Krishnan",'7C',4],
+  ["Ayaan Siddiqui","4C",5], ["Ira Venkatesh","6C",5], ["Shaurya Patel","8C",5],
+  ["Aadhya Subramanian","3A",2], ["Veer Malhotra","5A",4], ["Kyra DSouza","7A",1],
 ] as const;
+
+/* Homes sit around the stop their child uses, a few hundred metres off, the
+   way a colony actually scatters. Deterministic so the demo never changes. */
+const jitter = (seed: number) => {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return (x - Math.floor(x) - 0.5) * 0.009;
+};
 
 const today = () => new Date().toISOString().slice(0, 10);
 const phone = (n: number) => "+9198" + String(45000000 + n * 137).padStart(8, "0");
@@ -39,7 +56,12 @@ async function main() {
   await db.execute(sql`truncate table schools, leads restart identity cascade`);
 
   const [school] = await db.insert(s.schools)
-    .values({ name: "Vidya Vihar School", timezone: "Asia/Kolkata" }).returning();
+    .values({
+      name: "Vidya Vihar School",
+      timezone: "Asia/Kolkata",
+      // The gate. Route planning is measured from here and cannot run without it.
+      lat: 12.9279, lng: 77.6271, bellTime: "08:15:00",
+    }).returning();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
@@ -53,8 +75,14 @@ async function main() {
     email: "transport@vidyavihar.example", passwordHash,
   });
 
-  const [bus] = await db.insert(s.buses)
-    .values({ schoolId: school.id, plate: "KA-01-5521", capacity: 40 }).returning();
+  // Three buses, three sizes: enough that planning has to choose, and that a
+  // small bus being the wrong place for a big stop is a real possibility.
+  const buses = await db.insert(s.buses).values([
+    { schoolId: school.id, plate: "KA-01-5521", capacity: 40 },
+    { schoolId: school.id, plate: "KA-01-5522", capacity: 32 },
+    { schoolId: school.id, plate: "KA-01-5530", capacity: 24 },
+  ]).returning();
+  const [bus] = buses;
 
   const [route] = await db.insert(s.routes)
     .values({ schoolId: school.id, name: "Jayanagar — AM pickup", kind: "pickup" }).returning();
@@ -66,7 +94,18 @@ async function main() {
   ).returning();
 
   const studentRows = await db.insert(s.students).values(
-    STUDENTS.map(([name, classSection]) => ({ schoolId: school.id, name, classSection }))
+    STUDENTS.map(([name, classSection, stopIdx], i) => {
+      const [stopName, lat, lng] = STOPS[stopIdx];
+      // Two children are left without a location on purpose, so the planner's
+      // review list is exercised rather than theoretical.
+      const located = i % 11 !== 4;
+      return {
+        schoolId: school.id, name, classSection,
+        addressText: `${100 + i}, ${stopName}, Bengaluru`,
+        homeLat: located ? lat + jitter(i + 1) : null,
+        homeLng: located ? lng + jitter(i + 97) : null,
+      };
+    })
   ).returning();
 
   await db.insert(s.guardians).values(

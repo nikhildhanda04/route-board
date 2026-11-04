@@ -12,8 +12,11 @@ Four moments make up a school day, and the product is shaped around them:
 boarded at the stop, reached school, boarded for home, got off at the stop.
 Each is one tap, one row in an append-only event log, and one SMS per guardian.
 
-- **Admin** — students with CSV import, route and stop planner on a map, buses,
-  staff, schedule, message log, and today's exceptions.
+- **Admin** — students with CSV import, buses, staff, schedule, message log,
+  today's exceptions, a route and stop planner on a map, and **route planning
+  from where children live**: stops worked out from home coordinates, split
+  across the fleet under real capacities, each run ordered and timed back from
+  the bell. Nothing is written until the draft is accepted.
 - **Driver** — installable PWA. Taps queue offline and replay, stamped with a
   client-generated id so a replay cannot double-notify. GPS fixes every 8s
   behind a screen wake lock.
@@ -34,7 +37,7 @@ another school's rows.
 ```bash
 npm install
 cp .env.example .env.local        # fill in the values
-npm run db:migrate
+npm run db:migrate drizzle/0000_*.sql   # one file at a time, oldest first
 npm run db:setup-roles            # creates the restricted app role and RLS policies
 npm run db:seed                   # one demo school, routes, students, a trip
 npm run dev
@@ -49,6 +52,8 @@ are logged to the console instead of sent.
 npm run check:sms     # every SMS body fits one 160-char segment at worst case
 npm run check:gps     # fix-age arithmetic is clock-skew proof, thresholds hold
 npm run check:flow    # every notifiable event has an outbox row that resolves
+npm run check:routing # capacity, walking distance, ride ceiling and stop order hold
+npm run check:city    # the landing page's drawn city is seeded and its buses use streets
 npm run db:verify     # RLS actually refuses cross-tenant reads
 ```
 

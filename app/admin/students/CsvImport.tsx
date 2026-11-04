@@ -11,9 +11,18 @@ type ParsedRow = {
   classSection: string;
   guardianName: string;
   guardianPhone: string;
+  addressText: string;
+  homeLat: number | null;
+  homeLng: number | null;
   valid: boolean;
   error?: string;
 };
+
+/** A coordinate column that is blank, "NA" or junk is absent, not invalid. */
+function coord(raw: string | undefined, limit: number): number | null {
+  const n = Number(String(raw ?? "").trim());
+  return Number.isFinite(n) && n !== 0 && Math.abs(n) <= limit ? n : null;
+}
 
 function normalizeRow(raw: Record<string, string>): ParsedRow {
   const name = (raw.name ?? raw.Name ?? "").trim();
@@ -22,10 +31,15 @@ function normalizeRow(raw: Record<string, string>): ParsedRow {
   let guardianPhone = (raw.guardian_phone ?? raw["guardian phone"] ?? raw.Phone ?? "").trim();
   if (guardianPhone && !guardianPhone.startsWith("+")) guardianPhone = "+91" + guardianPhone.replace(/\D/g, "");
 
-  if (!name) return { name, classSection, guardianName, guardianPhone, valid: false, error: "Missing name" };
-  if (!guardianName) return { name, classSection, guardianName, guardianPhone, valid: false, error: "Missing guardian name" };
-  if (!E164.test(guardianPhone)) return { name, classSection, guardianName, guardianPhone, valid: false, error: "Bad phone format" };
-  return { name, classSection, guardianName, guardianPhone, valid: true };
+  const addressText = (raw.address ?? raw.Address ?? raw.address_text ?? raw["home address"] ?? "").trim();
+  const homeLat = coord(raw.lat ?? raw.Lat ?? raw.latitude ?? raw.Latitude, 90);
+  const homeLng = coord(raw.lng ?? raw.Lng ?? raw.lon ?? raw.longitude ?? raw.Longitude, 180);
+  const rest = { classSection, guardianName, guardianPhone, addressText, homeLat, homeLng };
+
+  if (!name) return { name, ...rest, valid: false, error: "Missing name" };
+  if (!guardianName) return { name, ...rest, valid: false, error: "Missing guardian name" };
+  if (!E164.test(guardianPhone)) return { name, ...rest, valid: false, error: "Bad phone format" };
+  return { name, ...rest, valid: true };
 }
 
 export default function CsvImport({ onClose }: { onClose: () => void }) {

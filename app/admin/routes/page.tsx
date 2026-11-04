@@ -30,7 +30,15 @@ export default async function RoutesPage() {
           <h1 className="font-narrow font-bold uppercase text-[clamp(1.5rem,3.5vw,2.25rem)] leading-none tracking-[-0.02em]">Routes</h1>
           <p className="text-sm text-[var(--color-pencil)] mt-1">{routes.length} route{routes.length === 1 ? "" : "s"}</p>
         </div>
-        <NewRouteModalLauncher />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/routes/plan"
+            className="stamp border border-blue-2 text-blue px-3 py-2 hover:bg-blue-4 transition-colors"
+          >
+            Plan the routes
+          </Link>
+          <NewRouteModalLauncher />
+        </div>
       </div>
 
       <div className="border border-[var(--color-blue-3)] bg-sheet divide-y divide-[var(--color-blue-3)]">
@@ -44,7 +52,9 @@ export default async function RoutesPage() {
           </Link>
         ))}
         {routes.length === 0 && (
-          <div className="px-4 py-10 text-center text-[var(--color-pencil)] text-sm">No routes yet — create one to start planning stops.</div>
+          <div className="px-4 py-10 text-center text-[var(--color-pencil)] text-sm">
+            No routes yet — <Link href="/admin/routes/plan" className="text-blue underline underline-offset-2">plan them from where children live</Link>, or create one by hand.
+          </div>
         )}
       </div>
     </div>

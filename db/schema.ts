@@ -21,6 +21,14 @@ export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   timezone: text("timezone").notNull().default("Asia/Kolkata"),
+  /**
+   * The gate. Every route begins or ends here, and route planning cannot run
+   * without it — it is the one fixed point the whole morning is measured from.
+   */
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  /** When every bus must be at the gate. Routes are timed backwards from it. */
+  bellTime: time("bell_time"),
   waPhoneNumberId: text("wa_phone_number_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -63,6 +71,17 @@ export const students = pgTable("students", {
   name: text("name").notNull(),
   classSection: text("class_section"),
   photoUrl: text("photo_url"),
+  /**
+   * Home, as the school wrote it and as the planner needs it.
+   *
+   * addressText is kept verbatim — landmarks, shorthand and all — because it
+   * is the only thing anyone can check a wrong coordinate against. The pair of
+   * doubles is what route planning actually runs on; a student without them is
+   * not a failure, it is a row on the review list.
+   */
+  addressText: text("address_text"),
+  homeLat: doublePrecision("home_lat"),
+  homeLng: doublePrecision("home_lng"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("students_school_idx").on(t.schoolId)]);

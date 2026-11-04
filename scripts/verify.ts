@@ -9,8 +9,16 @@ import { sql, eq, type SQL } from "drizzle-orm";
 import { db, forSchool } from "../db";
 import * as s from "../db/schema";
 
-const count = async (q: { execute: (x: SQL) => Promise<{ rows: { n: number }[] }> }, table: string) =>
-  Number((await q.execute(sql.raw(`select count(*)::int as n from ${table}`))).rows[0].n);
+const count = async (
+  q: { execute: (x: SQL) => Promise<{ rows: { n: number }[] }> },
+  table: string,
+  where?: string
+) =>
+  Number(
+    (await q.execute(
+      sql.raw(`select count(*)::int as n from ${table}${where ? ` where ${where}` : ""}`)
+    )).rows[0].n
+  );
 
 /**
  * Drizzle wraps driver errors, so the Postgres error — and its SQLSTATE — sits
@@ -44,15 +52,23 @@ async function main() {
     assert.equal(await count(db, "students"), 0);
   });
 
-  await check("scoped to Vidya sees exactly its 14", async () => {
-    const n = await forSchool(vidya.id, (tx) => count(tx, "students"));
-    assert.equal(n, 14);
-  });
-
-  await check("scoped to Xavier sees exactly its 2", async () => {
-    const n = await forSchool(xavier.id, (tx) => count(tx, "students"));
-    assert.equal(n, 2);
-  });
+  /*
+     Not a count. This script runs as the restricted role on purpose, so there
+     is no RLS-exempt read to compare against — and a number written down here
+     would only assert that the seed is still the size it was the day someone
+     typed it. What RLS actually promises is that a scoped read returns rows
+     belonging to that school and no others, so that is what is checked: every
+     row carries the right school_id, and there is at least one of them, which
+     rules out the empty result that would pass any such test trivially.
+  */
+  for (const school of [vidya, xavier]) {
+    await check(`scoped to ${school.name} sees its own rows and only its own`, async () => {
+      const rows = await forSchool(school.id, (tx) =>
+        tx.select({ schoolId: s.students.schoolId }).from(s.students));
+      assert.ok(rows.length > 0, "a scope that sees nothing proves nothing");
+      assert.ok(rows.every((r) => r.schoolId === school.id), "a row from another school came back");
+    });
+  }
 
   await check("no Xavier row leaks into a Vidya query", async () => {
     const rows = await forSchool(vidya.id, (tx) => tx.select().from(s.students));
